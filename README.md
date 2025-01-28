@@ -14,3 +14,8 @@
 
 ### Ground Truth Data
 - Processed horse pile ground truth data: `gs://mpg-aerial-survey/ground_truth/horsepile/processed`
+
+## Methods
+
+### Ground Truth Collection
+Ground truth data is collected using Emlid GNSS rovers in a global coordinate system (WGS84/EPSG:4326). Field technicians use the rovers to record precise locations of horse piles during ground surveys. This data serves as the reference dataset for training and validating detection models.
