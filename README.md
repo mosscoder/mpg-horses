@@ -19,3 +19,8 @@
 
 ### Ground Truth Collection
 Ground truth data is collected using Emlid GNSS rovers in a global coordinate system (WGS84/EPSG:4326). Field technicians use the rovers to record precise locations of horse piles during ground surveys. This data serves as the reference dataset for training and validating detection models.
+
+The Emlid rovers record coordinates in latitude and longitude format (WGS84). While the output includes fields for Easting and Northing, these are not used and are marked as NA in the data. The primary spatial coordinates used for all analyses are latitude and longitude.
+
+#### Absence Data Collection
+The absence dataset consists of locations where field technicians confirmed no horse piles were present. These points do not include start datetime information.
