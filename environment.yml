@@ -1,0 +1,13 @@
+name: mpg-horses
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - jupyter
+  - numpy
+  - pandas
+  - python
+  - geopandas
+  - gdal
+  - rasterio
+  - tqdm
