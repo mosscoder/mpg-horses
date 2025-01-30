@@ -23,5 +23,17 @@ Ground truth data is collected using Emlid GNSS rovers in a global coordinate sy
 
 The Emlid rovers record coordinates in latitude and longitude format (WGS84).
 
+#### Wrangled Ground Truth Data Structure
+The processed ground truth dataset contains the following key metadata columns:
+- `Point_Index`: Unique identifier for each observation point
+- `Presence`: Boolean indicator (1 for horse pile present, 0 for absent)
+- `Zone`: Survey zone identifier
+- `Period`: Time period of the survey
+- `Description`: Additional notes or observations
+- `Datetime`: Timestamp of data collection
+- `Latitude`: WGS84 latitude coordinate
+- `Longitude`: WGS84 longitude coordinate
+- `Ellipsoidal height`: Height above WGS84 ellipsoid
+
 #### Absence Data Collection
 The absence dataset consists of locations where field technicians confirmed no horse piles were present. Date of collection is known and is set during wrangling.
