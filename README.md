@@ -19,12 +19,12 @@
 ## Methods
 
 ### Ground Truth Collection
-Ground truth data is collected using Emlid GNSS rovers in a global coordinate system (WGS84/EPSG:4326). Field technicians use the rovers to record precise locations of horse piles during ground surveys. This data serves as the reference dataset for training and validating detection models.
+Ground truth data is collected using Emlid GNSS rovers in a global coordinate system (WGS84/EPSG:4326). Field technicians use the rovers to record precise locations of both horse piles (presence) and confirmed absence locations during ground surveys. This proximity-based data collection serves as the reference dataset for training and validating detection models.
 
-The Emlid rovers record coordinates in latitude and longitude format (WGS84).
+The Emlid rovers record coordinates in latitude and longitude format (WGS84). For each survey location, technicians record either the presence of a horse pile or explicitly confirm its absence, with the date of collection captured during data wrangling.
 
-#### Wrangled Ground Truth Data Structure
-The processed ground truth dataset contains the following key metadata columns:
+#### Wrangled GeoJSON Ground Truth Data Structure
+The processed ground truth dataset is exported as a GeoJSON vector file from `01_concat_ground_truth.ipynb` with the following key metadata columns:
 - `Point_Index`: Unique identifier for each observation point
 - `Presence`: Boolean indicator (1 for horse pile present, 0 for absent)
 - `Zone`: Survey zone identifier
@@ -33,7 +33,10 @@ The processed ground truth dataset contains the following key metadata columns:
 - `Datetime`: Timestamp of data collection
 - `Latitude`: WGS84 latitude coordinate
 - `Longitude`: WGS84 longitude coordinate
+- `Easting`: UTM easting coordinate (meters)
+- `Northing`: UTM northing coordinate (meters)
 - `Ellipsoidal height`: Height above WGS84 ellipsoid
+- `geometry`: GeoJSON Point geometry containing coordinates
 
 #### Absence Data Collection
 The absence dataset consists of locations where field technicians confirmed no horse piles were present. Date of collection is known and is set during wrangling.
