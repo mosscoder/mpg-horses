@@ -1,2 +1,7 @@
 **/*.tif
 **/.DS_Store
+
+data/
+src/
+
+notes.txt
