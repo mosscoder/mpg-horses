@@ -1,7 +1,8 @@
 **/*.tif
 **/.DS_Store
 
-data/raster/
+data/raster/tiles/
+data/raster/geotiffs/
 src/
 
 notes.txt
