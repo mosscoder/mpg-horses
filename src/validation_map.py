@@ -54,11 +54,28 @@ def create_validation_map(
     presence = gdf[gdf["Presence"] == 1]
     absence = gdf[gdf["Presence"] == 0]
 
-    presence.plot(
-        ax=ax, color="green", marker="o", markersize=5, label="Present", alpha=0.5
+    # Plot presence points
+    ax.scatter(
+        presence.geometry.x,
+        presence.geometry.y,
+        c="green",
+        s=15,  # size
+        alpha=0.5,
+        label="Present",
+        edgecolor="white",
+        linewidth=0.5,
     )
-    absence.plot(
-        ax=ax, color="red", marker="o", markersize=5, label="Absent", alpha=0.5
+
+    # Plot absence points
+    ax.scatter(
+        absence.geometry.x,
+        absence.geometry.y,
+        c="red",
+        s=15,  # size
+        alpha=0.5,
+        label="Absent",
+        edgecolor="white",
+        linewidth=0.5,
     )
 
     # Customize the plot
