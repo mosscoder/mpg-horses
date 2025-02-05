@@ -5,6 +5,7 @@ import rasterio as rio
 from rasterio.plot import show
 from rasterio.enums import Resampling
 import argparse
+import numpy as np
 
 
 def create_validation_map(
@@ -28,6 +29,8 @@ def create_validation_map(
     """
     # Read the ground truth points
     gdf = gpd.read_file(groundtruth_path)
+    if len(gdf) == 0:
+        raise ValueError("No points found in ground truth file")
 
     # Create figure and axis with a larger size
     fig, ax = plt.subplots(figsize=(12, 8))
@@ -46,6 +49,10 @@ def create_validation_map(
             out_shape=(src.count, height, width), resampling=Resampling.average
         )
 
+        # Check if we got valid data
+        if data.size == 0 or np.all(data == 0):
+            raise ValueError("No valid data read from GeoTIFF")
+
         # Scale image transform
         transform = src.transform * src.transform.scale(
             (src.width / data.shape[-1]), (src.height / data.shape[-2])
@@ -61,6 +68,8 @@ def create_validation_map(
     # Plot points with different colors for presence/absence
     presence = gdf[gdf["Presence"] == 1]
     absence = gdf[gdf["Presence"] == 0]
+
+    print(f"Plotting {len(presence)} presence points and {len(absence)} absence points")
 
     # Plot presence points
     ax.scatter(
@@ -96,19 +105,30 @@ def create_validation_map(
     # Adjust layout to prevent label cutoff
     plt.tight_layout()
 
-    if display:
-        plt.show()
+    # Handle display and save
+    try:
+        if save:
+            if output_path is None:
+                output_path = os.path.join(
+                    "figures", f"validation_map_{survey_name}.png"
+                )
 
-    if save:
-        if output_path is None:
-            output_path = os.path.join("figures", f"validation_map_{survey_name}.png")
+            # Create output directory if it doesn't exist
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-        # Create output directory if it doesn't exist
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        plt.savefig(
-            output_path, dpi=150, bbox_inches="tight", optimize=True, quality=80
-        )
-        plt.close()
+            # Save figure
+            print(f"Saving figure to {output_path}")
+            fig.savefig(
+                output_path,
+                dpi=150,
+                bbox_inches="tight",
+                facecolor="white",  # Ensure white background
+            )
+
+        if display:
+            plt.show()
+    finally:
+        plt.close(fig)
 
 
 if __name__ == "__main__":
