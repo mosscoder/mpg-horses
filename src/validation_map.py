@@ -24,8 +24,8 @@ def create_validation_map(
     # Create figure and axis with a larger size
     fig, ax = plt.subplots(figsize=(12, 8))
 
-    # Extract survey name from geotiff path
-    survey_name = os.path.basename(geotiff_path).replace("-visible.tif", "")
+    # Extract survey name from geotiff path (digits only)
+    survey_name = "".join(filter(str.isdigit, os.path.basename(geotiff_path)))
 
     # Read and plot the drone imagery with decimation
     with rio.open(geotiff_path) as src:
