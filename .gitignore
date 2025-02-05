@@ -1,4 +1,3 @@
-*.png
 **/*.tif
 **/.DS_Store
 
@@ -7,4 +6,4 @@ data/raster/geotiffs/
 
 notes.txt
 
-.cursorpath
+.cursorrules
