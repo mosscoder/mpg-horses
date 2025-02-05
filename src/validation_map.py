@@ -67,7 +67,7 @@ def create_validation_map(
         presence.geometry.x,
         presence.geometry.y,
         c="green",
-        s=15,  # size
+        s=10,  # size
         alpha=0.5,
         label="Present",
         edgecolor="white",
@@ -79,7 +79,7 @@ def create_validation_map(
         absence.geometry.x,
         absence.geometry.y,
         c="red",
-        s=15,  # size
+        s=10,  # size
         alpha=0.5,
         label="Absent",
         edgecolor="white",
