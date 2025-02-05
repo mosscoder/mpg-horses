@@ -4,10 +4,16 @@ import matplotlib.pyplot as plt
 import rasterio as rio
 from rasterio.plot import show
 from rasterio.enums import Resampling
+import argparse
 
 
 def create_validation_map(
-    geotiff_path, groundtruth_path, output_path=None, downsample_factor=8
+    geotiff_path,
+    groundtruth_path,
+    output_path=None,
+    downsample_factor=8,
+    display=False,
+    save=False,
 ):
     """
     Create a validation map showing ground truth points overlaid on drone imagery.
@@ -15,8 +21,10 @@ def create_validation_map(
     Args:
         geotiff_path (str): Path to the drone survey GeoTIFF
         groundtruth_path (str): Path to the ground truth GeoJSON file
-        output_path (str, optional): Path to save the output figure. If None, displays the figure.
+        output_path (str, optional): Path to save the output figure. If None, uses default path.
         downsample_factor (int): Factor by which to downsample the raster. Higher values = smaller image.
+        display (bool): Whether to display the figure
+        save (bool): Whether to save the figure
     """
     # Read the ground truth points
     gdf = gpd.read_file(groundtruth_path)
@@ -88,23 +96,59 @@ def create_validation_map(
     # Adjust layout to prevent label cutoff
     plt.tight_layout()
 
-    if output_path:
+    if display:
+        plt.show()
+
+    if save:
+        if output_path is None:
+            output_path = os.path.join("figures", f"validation_map_{survey_name}.png")
+
         # Create output directory if it doesn't exist
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.savefig(
+            output_path, dpi=150, bbox_inches="tight", optimize=True, quality=80
+        )
         plt.close()
-    else:
-        plt.show()
 
 
 if __name__ == "__main__":
-    # Use the most recent drone survey
-    geotiff_path = os.path.join(
-        "data", "raster", "geotiffs", "240702_upperpartridge-visible.tif"
+    parser = argparse.ArgumentParser(
+        description="Create validation map from drone imagery and ground truth points."
     )
-    groundtruth_path = os.path.join("data", "vector", "groundtruth.geojson")
+    parser.add_argument("--display", action="store_true", help="Display the map")
+    parser.add_argument("--save", action="store_true", help="Save the map")
+    parser.add_argument(
+        "--output", type=str, help="Output path for saved map", default=None
+    )
+    parser.add_argument(
+        "--downsample",
+        type=int,
+        default=20,
+        help="Downsample factor (higher = smaller image)",
+    )
+    parser.add_argument(
+        "--geotiff",
+        type=str,
+        default=os.path.join(
+            "data", "raster", "geotiffs", "240702_upperpartridge-visible.tif"
+        ),
+        help="Path to drone survey GeoTIFF",
+    )
+    parser.add_argument(
+        "--groundtruth",
+        type=str,
+        default=os.path.join("data", "vector", "groundtruth.geojson"),
+        help="Path to ground truth GeoJSON",
+    )
 
-    # For quick development, use higher downsample factor and display instead of save
+    args = parser.parse_args()
+
+    # Create map with specified options
     create_validation_map(
-        geotiff_path, groundtruth_path, output_path=None, downsample_factor=20
+        geotiff_path=args.geotiff,
+        groundtruth_path=args.groundtruth,
+        output_path=args.output,
+        downsample_factor=args.downsample,
+        display=args.display,
+        save=args.save,
     )
