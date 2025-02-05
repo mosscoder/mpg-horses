@@ -25,16 +25,16 @@ The Emlid rovers record coordinates in latitude and longitude format (WGS84). Fo
 
 #### Wrangled GeoJSON Ground Truth Data Structure
 The processed ground truth dataset is exported as a GeoJSON vector file from `01_concat_ground_truth.ipynb` with the following key metadata columns:
-- `Point_Index`: Unique identifier for each observation point
+- `idx`: Unique identifier for each observation point (zero-padded four-digit integer)
 - `Presence`: Boolean indicator (1 for horse pile present, 0 for absent)
 - `Zone`: Survey zone identifier
 - `Period`: Time period of the survey
-- `Description`: Additional notes or observations
-- `Datetime`: Timestamp of data collection
+- `Recency`: Additional metadata about observation recency
+- `Datetime`: UTC timestamp of data collection
 - `Latitude`: WGS84 latitude coordinate
 - `Longitude`: WGS84 longitude coordinate
-- `Easting`: UTM easting coordinate (meters)
-- `Northing`: UTM northing coordinate (meters)
+- `Easting`: UTM Zone 11N easting coordinate (meters)
+- `Northing`: UTM Zone 11N northing coordinate (meters)
 - `Ellipsoidal height`: Height above WGS84 ellipsoid
 - `geometry`: GeoJSON Point geometry containing coordinates
 
