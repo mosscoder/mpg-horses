@@ -12,6 +12,12 @@ from io import BytesIO
 from tqdm import tqdm
 
 
+# Constants for data directories relative to project root
+DATA_DIR = "data"
+PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
+ENCODED_TILES_DIR = os.path.join(PROCESSED_DIR, "encoded_tiles")
+
+
 def load_ground_truth(
     filepath: str = "data/vector/groundtruth.geojson",
 ) -> gpd.GeoDataFrame:
@@ -194,6 +200,70 @@ def encode_all_tiles(df: pd.DataFrame, batch_size: int = 100) -> pd.DataFrame:
     return result_df[success_mask].copy()
 
 
+def save_chunked_parquet(
+    df: pd.DataFrame, output_dir: str = ENCODED_TILES_DIR, target_size_mb: int = 500
+) -> None:
+    """
+    Save DataFrame to parquet files in chunks of approximately target_size_mb.
+
+    Following project directory structure:
+    data/
+    ├── raw/          # Original data
+    ├── processed/    # Cleaned, transformed data (including encoded tiles)
+    ├── vector/       # Vector data (GeoJSON, etc.)
+    ├── raster/       # Image data (GeoTIFFs)
+    └── tabular/      # CSV and other tabular data
+
+    Args:
+        df: DataFrame to save
+        output_dir: Directory to save parquet files (default: data/processed/encoded_tiles)
+        target_size_mb: Target size of each chunk in MB (default: 500)
+    """
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Calculate total size of DataFrame in memory
+    df_size = df.memory_usage(deep=True).sum() / (1024 * 1024)  # Size in MB
+
+    # Calculate number of chunks needed
+    n_chunks = int(np.ceil(df_size / target_size_mb))
+    chunk_size = len(df) // n_chunks
+
+    print(f"\nSaving DataFrame (total size: {df_size:.1f} MB) in {n_chunks} chunks...")
+
+    # Save in chunks with progress bar
+    with tqdm(total=len(df), desc="Saving chunks") as pbar:
+        for i in range(n_chunks):
+            start_idx = i * chunk_size
+            end_idx = min((i + 1) * chunk_size, len(df))
+
+            # Get chunk
+            chunk = df.iloc[start_idx:end_idx]
+
+            # Generate chunk filename
+            chunk_file = os.path.join(output_dir, f"tiles_chunk_{i:03d}.parquet")
+
+            # Save chunk
+            chunk.to_parquet(chunk_file, index=True)
+            pbar.update(end_idx - start_idx)
+
+    print(f"Saved {n_chunks} chunks to {output_dir}/")
+
+    # Save metadata about the chunks
+    metadata = {
+        "n_chunks": n_chunks,
+        "total_rows": len(df),
+        "total_size_mb": df_size,
+        "chunk_files": [f"tiles_chunk_{i:03d}.parquet" for i in range(n_chunks)],
+    }
+
+    # Save metadata as JSON
+    import json
+
+    with open(os.path.join(output_dir, "chunks_metadata.json"), "w") as f:
+        json.dump(metadata, f, indent=2)
+
+
 if __name__ == "__main__":
     try:
         # Load and analyze ground truth data
@@ -238,7 +308,18 @@ if __name__ == "__main__":
         print("\nEncoding all tiles...")
         encoded_df = encode_all_tiles(df)
         print("\nEncoded DataFrame Info:")
-        print(encoded_df.info())
+        print(encoded_df.info(show_counts=True))
+
+        # Show sample of encoded tile sizes
+        print("\nSample of encoded tile sizes (bytes):")
+        encoded_sizes = encoded_df["encoded_tile"].apply(len)
+        print(f"Mean size: {encoded_sizes.mean():.0f}")
+        print(f"Min size: {encoded_sizes.min()}")
+        print(f"Max size: {encoded_sizes.max()}")
+        print(f"Total size: {encoded_sizes.sum() / (1024*1024*1024):.2f} GB")
+
+        # Save encoded tiles to parquet chunks
+        save_chunked_parquet(encoded_df)  # Using default output directory
 
     except Exception as e:
         print(f"Error: {str(e)}")
