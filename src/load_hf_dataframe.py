@@ -4,8 +4,11 @@ Simple functions to load and analyze ground truth data.
 
 import geopandas as gpd
 import pandas as pd
+import numpy as np
+import rasterio
 from pathlib import Path
 import os
+from io import BytesIO
 
 
 def load_ground_truth(
@@ -28,6 +31,45 @@ def get_point_info(gdf: gpd.GeoDataFrame) -> dict:
         "columns": list(points.columns),
         "bounds": points.total_bounds.tolist(),
     }
+
+
+def encode_tile(tile_path: str) -> bytes:
+    """
+    Read a GeoTIFF tile and encode it as bytes.
+
+    Args:
+        tile_path: Path to the GeoTIFF tile
+
+    Returns:
+        Bytes representation of the tile
+
+    Raises:
+        FileNotFoundError: If tile does not exist
+        ValueError: If tile cannot be read
+    """
+    if not os.path.exists(tile_path):
+        raise FileNotFoundError(f"Tile not found: {tile_path}")
+
+    try:
+        with rasterio.open(tile_path) as src:
+            # Read all bands
+            data = src.read()
+
+            # Get metadata
+            meta = src.meta
+
+            # Create BytesIO object to store the data
+            bio = BytesIO()
+
+            # Save arrays and metadata
+            np.savez_compressed(bio, data=data, **meta)
+
+            # Get the bytes
+            bio.seek(0)
+            return bio.read()
+
+    except Exception as e:
+        raise ValueError(f"Failed to read tile {tile_path}: {str(e)}")
 
 
 def create_feature_dataframe(
@@ -97,6 +139,41 @@ def create_feature_dataframe(
     return df_expanded
 
 
+def encode_sample_tiles(df: pd.DataFrame, sample_size: int = 5) -> pd.DataFrame:
+    """
+    Create a sample DataFrame with encoded tiles.
+
+    Args:
+        df: DataFrame containing tile_path column
+        sample_size: Number of samples to encode (default: 5)
+
+    Returns:
+        DataFrame with encoded_tile column containing byte representations
+    """
+    # Take a small random sample
+    sample_df = df.sample(n=min(sample_size, len(df)), random_state=42)
+
+    # Create a copy to avoid modifying the original
+    sample_df = sample_df.copy()
+
+    # Encode tiles
+    encoded_tiles = []
+    for tile_path in sample_df.tile_path:
+        try:
+            encoded_tiles.append(encode_tile(tile_path))
+        except (FileNotFoundError, ValueError) as e:
+            encoded_tiles.append(None)
+            print(f"Warning: {str(e)}")
+
+    # Add encoded tiles column
+    sample_df["encoded_tile"] = encoded_tiles
+
+    # Remove rows where encoding failed
+    sample_df = sample_df.dropna(subset=["encoded_tile"])
+
+    return sample_df
+
+
 if __name__ == "__main__":
     try:
         # Load and analyze ground truth data
@@ -136,6 +213,13 @@ if __name__ == "__main__":
         print(f"Presence rows: {len(df[df['Presence'] == 1])}")
         print(f"Absence rows: {len(df[df['Presence'] == 0])}")
         print(f"Unique orthomosaics: {df['orthomosaic'].nunique()}")
+
+        # Create sample with encoded tiles
+        print("\nEncoding sample tiles...")
+        sample_df = encode_sample_tiles(df, sample_size=2)
+        print(f"Successfully encoded {len(sample_df)} tiles")
+        print("\nSample DataFrame Info:")
+        print(sample_df.info())
 
     except Exception as e:
         print(f"Error: {str(e)}")
