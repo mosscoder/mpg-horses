@@ -9,6 +9,7 @@ import rasterio
 from pathlib import Path
 import os
 from io import BytesIO
+from tqdm import tqdm
 
 
 def load_ground_truth(
@@ -139,39 +140,58 @@ def create_feature_dataframe(
     return df_expanded
 
 
-def encode_sample_tiles(df: pd.DataFrame, sample_size: int = 5) -> pd.DataFrame:
+def encode_all_tiles(df: pd.DataFrame, batch_size: int = 100) -> pd.DataFrame:
     """
-    Create a sample DataFrame with encoded tiles.
+    Encode all tiles in the DataFrame, processing in batches to manage memory.
 
     Args:
         df: DataFrame containing tile_path column
-        sample_size: Number of samples to encode (default: 5)
+        batch_size: Number of tiles to process at once (default: 100)
 
     Returns:
         DataFrame with encoded_tile column containing byte representations
     """
-    # Take a small random sample
-    sample_df = df.sample(n=min(sample_size, len(df)), random_state=42)
-
     # Create a copy to avoid modifying the original
-    sample_df = sample_df.copy()
+    result_df = df.copy()
 
-    # Encode tiles
-    encoded_tiles = []
-    for tile_path in sample_df.tile_path:
-        try:
-            encoded_tiles.append(encode_tile(tile_path))
-        except (FileNotFoundError, ValueError) as e:
-            encoded_tiles.append(None)
-            print(f"Warning: {str(e)}")
+    # Initialize encoded_tile column with None
+    result_df["encoded_tile"] = None
 
-    # Add encoded tiles column
-    sample_df["encoded_tile"] = encoded_tiles
+    # Calculate number of batches
+    n_batches = (len(df) + batch_size - 1) // batch_size
 
-    # Remove rows where encoding failed
-    sample_df = sample_df.dropna(subset=["encoded_tile"])
+    # Process in batches with progress bar
+    failed_encodings = []
+    with tqdm(total=len(df), desc="Encoding tiles") as pbar:
+        for i in range(n_batches):
+            start_idx = i * batch_size
+            end_idx = min((i + 1) * batch_size, len(df))
 
-    return sample_df
+            # Process current batch
+            batch_indices = df.index[start_idx:end_idx]
+            for idx in batch_indices:
+                tile_path = df.loc[idx, "tile_path"]
+                try:
+                    result_df.loc[idx, "encoded_tile"] = encode_tile(tile_path)
+                except (FileNotFoundError, ValueError) as e:
+                    failed_encodings.append((tile_path, str(e)))
+                pbar.update(1)
+
+    # Print summary of failures
+    if failed_encodings:
+        print(f"\nFailed to encode {len(failed_encodings)} tiles:")
+        for path, error in failed_encodings[:10]:  # Show first 10 failures
+            print(f"- {path}: {error}")
+        if len(failed_encodings) > 10:
+            print(f"... and {len(failed_encodings) - 10} more failures")
+
+    # Create a mask for successfully encoded tiles
+    success_mask = result_df["encoded_tile"].notna()
+
+    print(f"\nSuccessfully encoded {success_mask.sum()} out of {len(df)} tiles")
+
+    # Only return rows with successful encodings
+    return result_df[success_mask].copy()
 
 
 if __name__ == "__main__":
@@ -214,12 +234,11 @@ if __name__ == "__main__":
         print(f"Absence rows: {len(df[df['Presence'] == 0])}")
         print(f"Unique orthomosaics: {df['orthomosaic'].nunique()}")
 
-        # Create sample with encoded tiles
-        print("\nEncoding sample tiles...")
-        sample_df = encode_sample_tiles(df, sample_size=2)
-        print(f"Successfully encoded {len(sample_df)} tiles")
-        print("\nSample DataFrame Info:")
-        print(sample_df.info())
+        # Encode all tiles
+        print("\nEncoding all tiles...")
+        encoded_df = encode_all_tiles(df)
+        print("\nEncoded DataFrame Info:")
+        print(encoded_df.info())
 
     except Exception as e:
         print(f"Error: {str(e)}")
