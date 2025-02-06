@@ -35,14 +35,14 @@ def create_feature_dataframe(
 ) -> pd.DataFrame:
     """
     Create a pandas DataFrame with features from the GeoDataFrame and orthomosaic information.
-    Duplicates each row for every available orthomosaic.
+    Matches presence/absence tiles with appropriate orthomosaic dates.
 
     Args:
-        gdf: GeoDataFrame containing ground truth data
+        gdf: GeoDataFrame containing ground truth data with Presence and Datetime columns
         tiles_dir: Directory containing orthomosaic tiles
 
     Returns:
-        DataFrame with features and orthomosaic information, duplicated for each orthomosaic
+        DataFrame with features and orthomosaic information, filtered by presence/absence and dates
     """
     # Convert GeoDataFrame to DataFrame, excluding geometry column
     df = pd.DataFrame(gdf.drop(columns=["geometry"]))
@@ -55,12 +55,44 @@ def create_feature_dataframe(
     ]
     orthomosaics.sort()  # Sort chronologically
 
-    # Duplicate rows for each orthomosaic
+    # Convert orthomosaic dates to timezone-naive datetime
+    ortho_dates = pd.to_datetime(
+        [d.split("_")[0] for d in orthomosaics], format="%y%m%d", utc=True
+    ).tz_localize(None)
+
+    # Duplicate rows for each orthomosaic based on conditions
     df_expanded = pd.DataFrame()
-    for ortho in orthomosaics:
-        df_temp = df.copy()
-        df_temp["orthomosaic"] = ortho
-        df_expanded = pd.concat([df_expanded, df_temp], ignore_index=True)
+
+    for idx, row in df.iterrows():
+        # Convert to timezone-naive datetime
+        row_date = pd.to_datetime(row["Datetime"]).tz_localize(None)
+
+        if row["Presence"] == 1:
+            # For presence data, only include orthomosaics after the datetime
+            valid_orthos = [
+                ortho
+                for ortho, date in zip(orthomosaics, ortho_dates)
+                if date > row_date
+            ]
+        else:
+            # For absence data, include all orthomosaics
+            valid_orthos = orthomosaics
+
+        if valid_orthos:
+            temp_rows = pd.DataFrame([row.to_dict()] * len(valid_orthos))
+            temp_rows["orthomosaic"] = valid_orthos
+            df_expanded = pd.concat([df_expanded, temp_rows], ignore_index=True)
+
+    # Add tile path column based on presence/absence with zero-padded idx
+    df_expanded["tile_path"] = df_expanded.apply(
+        lambda x: os.path.join(
+            tiles_dir,
+            x["orthomosaic"],
+            "presence" if x["Presence"] == 1 else "absence",
+            f"{int(x['idx']):04d}.tif",  # Zero-pad idx to 4 digits
+        ),
+        axis=1,
+    )
 
     return df_expanded
 
@@ -80,6 +112,30 @@ if __name__ == "__main__":
         df = create_feature_dataframe(gdf)
         print("\nFeature DataFrame Info:")
         print(df.info())
+
+        # Show samples of presence and absence rows
+        print("\nSample of Presence Rows (Presence == 1):")
+        presence_sample = df[df["Presence"] == 1].head(3)
+        print(
+            presence_sample[
+                ["Presence", "Datetime", "orthomosaic", "tile_path"]
+            ].to_string()
+        )
+
+        print("\nSample of Absence Rows (Presence == 0):")
+        absence_sample = df[df["Presence"] == 0].head(3)
+        print(
+            absence_sample[
+                ["Presence", "Datetime", "orthomosaic", "tile_path"]
+            ].to_string()
+        )
+
+        # Print some statistics
+        print("\nSummary:")
+        print(f"Total rows: {len(df)}")
+        print(f"Presence rows: {len(df[df['Presence'] == 1])}")
+        print(f"Absence rows: {len(df[df['Presence'] == 0])}")
+        print(f"Unique orthomosaics: {df['orthomosaic'].nunique()}")
 
     except Exception as e:
         print(f"Error: {str(e)}")
