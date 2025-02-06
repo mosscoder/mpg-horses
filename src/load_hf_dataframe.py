@@ -35,13 +35,14 @@ def create_feature_dataframe(
 ) -> pd.DataFrame:
     """
     Create a pandas DataFrame with features from the GeoDataFrame and orthomosaic information.
+    Duplicates each row for every available orthomosaic.
 
     Args:
         gdf: GeoDataFrame containing ground truth data
         tiles_dir: Directory containing orthomosaic tiles
 
     Returns:
-        DataFrame with features and orthomosaic information
+        DataFrame with features and orthomosaic information, duplicated for each orthomosaic
     """
     # Convert GeoDataFrame to DataFrame, excluding geometry column
     df = pd.DataFrame(gdf.drop(columns=["geometry"]))
@@ -54,26 +55,14 @@ def create_feature_dataframe(
     ]
     orthomosaics.sort()  # Sort chronologically
 
-    # Add orthomosaic column
-    df["orthomosaic"] = orthomosaics[0]  # Default to first orthomosaic
+    # Duplicate rows for each orthomosaic
+    df_expanded = pd.DataFrame()
+    for ortho in orthomosaics:
+        df_temp = df.copy()
+        df_temp["orthomosaic"] = ortho
+        df_expanded = pd.concat([df_expanded, df_temp], ignore_index=True)
 
-    # Update orthomosaic based on datetime if available
-    if "Datetime" in df.columns:
-        df["Datetime"] = pd.to_datetime(df["Datetime"])
-
-        # Create a mapping of dates to orthomosaics
-        ortho_dates = pd.to_datetime(
-            [d.split("_")[0] for d in orthomosaics], format="%y%m%d"
-        )
-        date_to_ortho = pd.Series(orthomosaics, index=ortho_dates)
-
-        # Find the closest orthomosaic date for each point
-        for idx in df.index:
-            point_date = df.loc[idx, "Datetime"]
-            closest_date = ortho_dates[abs(ortho_dates - point_date).argmin()]
-            df.loc[idx, "orthomosaic"] = date_to_ortho[closest_date]
-
-    return df
+    return df_expanded
 
 
 if __name__ == "__main__":
@@ -89,10 +78,8 @@ if __name__ == "__main__":
 
         # Create and display feature DataFrame
         df = create_feature_dataframe(gdf)
-        print("\nFeature DataFrame Preview:")
-        print(df.head())
-        print("\nColumns:", df.columns.tolist())
-        print("\nUnique orthomosaics:", df["orthomosaic"].unique())
+        print("\nFeature DataFrame Info:")
+        print(df.info())
 
     except Exception as e:
         print(f"Error: {str(e)}")
