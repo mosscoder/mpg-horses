@@ -10,6 +10,7 @@ from pathlib import Path
 import os
 from io import BytesIO
 from tqdm import tqdm
+import json
 
 
 # Constants for data directories relative to project root
@@ -25,14 +26,12 @@ def load_ground_truth(
     path = Path(filepath)
     if not path.exists():
         raise FileNotFoundError(f"File not found: {filepath}")
-
     return gpd.read_file(filepath)
 
 
 def get_point_info(gdf: gpd.GeoDataFrame) -> dict:
     """Get basic information about point features."""
     points = gdf[gdf.geometry.type == "Point"]
-
     return {
         "total_points": len(points),
         "columns": list(points.columns),
@@ -41,224 +40,106 @@ def get_point_info(gdf: gpd.GeoDataFrame) -> dict:
 
 
 def encode_tile(tile_path: str) -> bytes:
-    """
-    Read a GeoTIFF tile and encode it as bytes.
-
-    Args:
-        tile_path: Path to the GeoTIFF tile
-
-    Returns:
-        Bytes representation of the tile
-
-    Raises:
-        FileNotFoundError: If tile does not exist
-        ValueError: If tile cannot be read
-    """
+    """Read a GeoTIFF tile and encode it as bytes."""
     if not os.path.exists(tile_path):
         raise FileNotFoundError(f"Tile not found: {tile_path}")
 
-    try:
-        with rasterio.open(tile_path) as src:
-            # Read all bands
-            data = src.read()
-
-            # Get metadata
-            meta = src.meta
-
-            # Create BytesIO object to store the data
-            bio = BytesIO()
-
-            # Save arrays and metadata
-            np.savez_compressed(bio, data=data, **meta)
-
-            # Get the bytes
-            bio.seek(0)
-            return bio.read()
-
-    except Exception as e:
-        raise ValueError(f"Failed to read tile {tile_path}: {str(e)}")
+    with rasterio.open(tile_path) as src:
+        data = src.read()
+        bio = BytesIO()
+        np.savez_compressed(bio, data=data, **src.meta)
+        bio.seek(0)
+        return bio.read()
 
 
 def create_feature_dataframe(
     gdf: gpd.GeoDataFrame, tiles_dir: str = "data/raster/tiles"
 ) -> pd.DataFrame:
-    """
-    Create a pandas DataFrame with features from the GeoDataFrame and orthomosaic information.
-    Matches presence/absence tiles with appropriate orthomosaic dates.
-
-    Args:
-        gdf: GeoDataFrame containing ground truth data with Presence and Datetime columns
-        tiles_dir: Directory containing orthomosaic tiles
-
-    Returns:
-        DataFrame with features and orthomosaic information, filtered by presence/absence and dates
-    """
-    # Convert GeoDataFrame to DataFrame, excluding geometry column
+    """Create a DataFrame with features from the GeoDataFrame and orthomosaic information."""
+    # Convert GeoDataFrame to DataFrame
     df = pd.DataFrame(gdf.drop(columns=["geometry"]))
 
-    # Get list of orthomosaic directories
-    orthomosaics = [
-        d
-        for d in os.listdir(tiles_dir)
-        if os.path.isdir(os.path.join(tiles_dir, d)) and not d.startswith(".")
-    ]
-    orthomosaics.sort()  # Sort chronologically
+    # Get and sort orthomosaics
+    orthomosaics = sorted(
+        [
+            d
+            for d in os.listdir(tiles_dir)
+            if os.path.isdir(os.path.join(tiles_dir, d)) and not d.startswith(".")
+        ]
+    )
 
-    # Convert orthomosaic dates to timezone-naive datetime
+    # Convert dates
     ortho_dates = pd.to_datetime(
         [d.split("_")[0] for d in orthomosaics], format="%y%m%d", utc=True
     ).tz_localize(None)
 
-    # Duplicate rows for each orthomosaic based on conditions
-    df_expanded = pd.DataFrame()
-
-    for idx, row in df.iterrows():
-        # Convert to timezone-naive datetime
+    # Create rows for each valid orthomosaic
+    rows = []
+    for _, row in df.iterrows():
         row_date = pd.to_datetime(row["Datetime"]).tz_localize(None)
+        valid_orthos = (
+            [ortho for ortho, date in zip(orthomosaics, ortho_dates) if date > row_date]
+            if row["Presence"] == 1
+            else orthomosaics
+        )
 
-        if row["Presence"] == 1:
-            # For presence data, only include orthomosaics after the datetime
-            valid_orthos = [
-                ortho
-                for ortho, date in zip(orthomosaics, ortho_dates)
-                if date > row_date
-            ]
-        else:
-            # For absence data, include all orthomosaics
-            valid_orthos = orthomosaics
+        for ortho in valid_orthos:
+            new_row = row.to_dict()
+            new_row["orthomosaic"] = ortho
+            new_row["tile_path"] = os.path.join(
+                tiles_dir,
+                ortho,
+                "presence" if row["Presence"] == 1 else "absence",
+                f"{int(row['idx']):04d}.tif",
+            )
+            rows.append(new_row)
 
-        if valid_orthos:
-            temp_rows = pd.DataFrame([row.to_dict()] * len(valid_orthos))
-            temp_rows["orthomosaic"] = valid_orthos
-            df_expanded = pd.concat([df_expanded, temp_rows], ignore_index=True)
-
-    # Add tile path column based on presence/absence with zero-padded idx
-    df_expanded["tile_path"] = df_expanded.apply(
-        lambda x: os.path.join(
-            tiles_dir,
-            x["orthomosaic"],
-            "presence" if x["Presence"] == 1 else "absence",
-            f"{int(x['idx']):04d}.tif",  # Zero-pad idx to 4 digits
-        ),
-        axis=1,
-    )
-
-    return df_expanded
+    return pd.DataFrame(rows)
 
 
 def encode_all_tiles(df: pd.DataFrame, batch_size: int = 100) -> pd.DataFrame:
-    """
-    Encode all tiles in the DataFrame, processing in batches to manage memory.
-
-    Args:
-        df: DataFrame containing tile_path column
-        batch_size: Number of tiles to process at once (default: 100)
-
-    Returns:
-        DataFrame with encoded_tile column containing byte representations
-    """
-    # Create a copy to avoid modifying the original
+    """Encode all tiles in the DataFrame."""
     result_df = df.copy()
-
-    # Initialize encoded_tile column with None
     result_df["encoded_tile"] = None
-
-    # Calculate number of batches
-    n_batches = (len(df) + batch_size - 1) // batch_size
-
-    # Process in batches with progress bar
     failed_encodings = []
-    with tqdm(total=len(df), desc="Encoding tiles") as pbar:
-        for i in range(n_batches):
-            start_idx = i * batch_size
-            end_idx = min((i + 1) * batch_size, len(df))
 
-            # Process current batch
-            batch_indices = df.index[start_idx:end_idx]
-            for idx in batch_indices:
-                tile_path = df.loc[idx, "tile_path"]
-                try:
-                    result_df.loc[idx, "encoded_tile"] = encode_tile(tile_path)
-                except (FileNotFoundError, ValueError) as e:
-                    failed_encodings.append((tile_path, str(e)))
-                pbar.update(1)
+    for idx in tqdm(df.index, desc="Encoding tiles"):
+        try:
+            result_df.loc[idx, "encoded_tile"] = encode_tile(df.loc[idx, "tile_path"])
+        except (FileNotFoundError, ValueError) as e:
+            failed_encodings.append((df.loc[idx, "tile_path"], str(e)))
 
-    # Print summary of failures
     if failed_encodings:
-        print(f"\nFailed to encode {len(failed_encodings)} tiles:")
-        for path, error in failed_encodings[:10]:  # Show first 10 failures
-            print(f"- {path}: {error}")
-        if len(failed_encodings) > 10:
-            print(f"... and {len(failed_encodings) - 10} more failures")
+        print(f"\nFailed to encode {len(failed_encodings)} tiles")
 
-    # Create a mask for successfully encoded tiles
     success_mask = result_df["encoded_tile"].notna()
-
     print(f"\nSuccessfully encoded {success_mask.sum()} out of {len(df)} tiles")
-
-    # Only return rows with successful encodings
     return result_df[success_mask].copy()
 
 
 def save_chunked_parquet(
     df: pd.DataFrame, output_dir: str = ENCODED_TILES_DIR, target_size_mb: int = 500
 ) -> None:
-    """
-    Save DataFrame to parquet files in chunks of approximately target_size_mb.
-
-    Following project directory structure:
-    data/
-    ├── raw/          # Original data
-    ├── processed/    # Cleaned, transformed data (including encoded tiles)
-    ├── vector/       # Vector data (GeoJSON, etc.)
-    ├── raster/       # Image data (GeoTIFFs)
-    └── tabular/      # CSV and other tabular data
-
-    Args:
-        df: DataFrame to save
-        output_dir: Directory to save parquet files (default: data/processed/encoded_tiles)
-        target_size_mb: Target size of each chunk in MB (default: 500)
-    """
-    # Create output directory if it doesn't exist
+    """Save DataFrame to parquet files in chunks."""
     os.makedirs(output_dir, exist_ok=True)
 
-    # Calculate total size of DataFrame in memory
-    df_size = df.memory_usage(deep=True).sum() / (1024 * 1024)  # Size in MB
-
-    # Calculate number of chunks needed
+    df_size = df.memory_usage(deep=True).sum() / (1024 * 1024)
     n_chunks = int(np.ceil(df_size / target_size_mb))
     chunk_size = len(df) // n_chunks
 
-    print(f"\nSaving DataFrame (total size: {df_size:.1f} MB) in {n_chunks} chunks...")
+    for i in tqdm(range(n_chunks), desc="Saving chunks"):
+        chunk = df.iloc[i * chunk_size : min((i + 1) * chunk_size, len(df))]
+        chunk.to_parquet(
+            os.path.join(output_dir, f"tiles_chunk_{i:03d}.parquet"), index=True
+        )
 
-    # Save in chunks with progress bar
-    with tqdm(total=len(df), desc="Saving chunks") as pbar:
-        for i in range(n_chunks):
-            start_idx = i * chunk_size
-            end_idx = min((i + 1) * chunk_size, len(df))
-
-            # Get chunk
-            chunk = df.iloc[start_idx:end_idx]
-
-            # Generate chunk filename
-            chunk_file = os.path.join(output_dir, f"tiles_chunk_{i:03d}.parquet")
-
-            # Save chunk
-            chunk.to_parquet(chunk_file, index=True)
-            pbar.update(end_idx - start_idx)
-
-    print(f"Saved {n_chunks} chunks to {output_dir}/")
-
-    # Save metadata about the chunks
+    # Save metadata
     metadata = {
         "n_chunks": n_chunks,
         "total_rows": len(df),
         "total_size_mb": df_size,
         "chunk_files": [f"tiles_chunk_{i:03d}.parquet" for i in range(n_chunks)],
     }
-
-    # Save metadata as JSON
-    import json
 
     with open(os.path.join(output_dir, "chunks_metadata.json"), "w") as f:
         json.dump(metadata, f, indent=2)
