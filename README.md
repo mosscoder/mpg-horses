@@ -8,8 +8,9 @@
 
 ### Local Notebooks
 - `01_concat_ground_truth.ipynb` - Concatenates ground truth data
-- `02_extract_tiles.ipynb` - Extracts image tiles from the dataset
-- `03_push_to_hugging_face.ipynb` - Pushes processed data to Hugging Face
+- `02_figures.ipynb` - Generates figures and visualizations
+- `03_extract_tiles.ipynb` - Extracts image tiles from the dataset
+- `04_load_hf_dataframe.ipynb` - Loads and processes data from Hugging Face
 
 ## Data Locations
 
