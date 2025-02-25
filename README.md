@@ -106,7 +106,7 @@ The processed ground truth dataset is exported as a GeoJSON vector file from `01
 - `Longitude`: WGS84 longitude coordinate
 - `Easting`: UTM Zone 11N easting coordinate (meters)
 - `Northing`: UTM Zone 11N northing coordinate (meters)
-- `Ellipsoidal height`: Height above WGS84 ellipsoid
+- `Ellipsoidal_height`: Height above WGS84 ellipsoid
 - `geometry`: GeoJSON Point geometry containing coordinates
 
 #### Absence Data Collection
