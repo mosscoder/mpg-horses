@@ -30,7 +30,9 @@ These notebooks are designed to run on your local machine and follow a sequentia
 #### 1. Ground Truth Data Processing
 **`01_concat_ground_truth.ipynb`**
 - Purpose: Concatenates and processes ground truth data from multiple surveys
-- Input: Raw survey data from GNSS rovers
+- Input: Raw survey data from GNSS rovers (CSV files from Google Cloud Storage)
+  - `gs://mpg-aerial-survey/ground_truth/horsepile/processed/horse_pile_presence.csv`
+  - `gs://mpg-aerial-survey/ground_truth/horsepile/processed/horse_pile_absence.csv`
 - Output: Consolidated GeoJSON with standardized metadata
 - Key Operations:
   - Merges multiple survey datasets
@@ -59,17 +61,73 @@ These notebooks are designed to run on your local machine and follow a sequentia
   - Image preprocessing and normalization
   - Quality control checks
   - Metadata association
+- Dependencies:
+  - pandas, geopandas, rasterio, concurrent.futures for parallel processing
 
 #### 4. Model Data Preparation
 **`04_load_hf_dataframe.ipynb`**
 - Purpose: Prepares and loads data for machine learning model training
 - Input: Processed image tiles and ground truth data
-- Output: Hugging Face compatible dataset
+- Output: Hugging Face compatible dataset with train-test splits
 - Key Operations:
   - Data formatting for deep learning
   - Feature engineering
   - Dataset splitting and validation
   - Hugging Face dataset creation
+- Key Features:
+  - Implements reproducible train-test splitting (using RANDOM_SEED=42)
+  - Processes GeoJSON data and orthomosaic tiles
+  - Creates structured directories for model training data
+  - Exports data in formats compatible with Hugging Face datasets
+
+## Train-Test Split Methodology
+
+The dataset is split into training (80%) and testing (20%) sets using a stratified approach that preserves the distribution of presence and absence points while ensuring spatial and temporal representativeness. The split methodology is implemented in `04_load_hf_dataframe.ipynb` and follows these steps:
+
+### For Absence Points (Negative Samples)
+1. **Filtering**: Absence points within 2 meters of any presence point are excluded to ensure they are truly representative of areas without horse piles.
+2. **Spatial Blocking**: K-means clustering is applied to create spatial blocks based on geographic coordinates, ensuring spatial representativeness.
+3. **Stratified Sampling**: 20% of points are randomly sampled from each spatial block for the test set, maintaining the spatial distribution.
+
+### For Presence Points (Positive Samples)
+1. **Stratification by Zone and Period**: Presence points are grouped by their zone and time period attributes.
+2. **Proportional Sampling**: 20% of points are randomly sampled from each zone-period group for the test set.
+3. **Temporal Consistency**: This approach ensures that the test set includes samples from all survey zones and time periods.
+
+### Implementation Details
+- Random seed (RANDOM_SEED=42) is used for reproducibility
+- The resulting split maintains approximately the same presence-to-absence ratio in both training and testing sets
+- The split is performed on the original ground truth points before tile extraction, ensuring that all tiles derived from the same point are in the same split
+
+### Dataset Statistics
+- Total dataset: ~15,900 point-orthomosaic combinations
+  - Training set: ~12,780 combinations (80%)
+  - Testing set: ~3,120 combinations (20%)
+- Each point may appear multiple times in the dataset, paired with different orthomosaic dates to capture temporal variations
+
+This stratified splitting approach ensures that the model evaluation is robust across different spatial locations and temporal conditions, providing a more reliable assessment of model performance.
+
+## Project Structure
+```
+mpg-horses/
+├── data/                  # Data directory (typically gitignored)
+│   ├── raw/              # Original, immutable data
+│   ├── processed/        # Cleaned, transformed data
+│   │   └── splits/       # Train-test splits for ML models
+│   ├── tabular/          # CSV and tabular data files
+│   ├── hf/               # Hugging Face formatted datasets
+│   └── external/         # Third-party data sources
+├── notebooks/            # Jupyter notebooks for analysis
+│   ├── 01_concat_ground_truth.ipynb  # Ground truth data processing
+│   ├── 02_figures.ipynb              # Data visualization
+│   ├── 03_extract_tiles.ipynb        # Image tile extraction
+│   └── 04_load_hf_dataframe.ipynb    # ML dataset preparation
+├── results/              # Generated analysis results
+│   ├── figures/          # Generated graphics and figures
+│   ├── docs/             # Documentation files
+│   └── outputs/          # Other outputs
+└── docs/                # Documentation
+```
 
 ## Notebook Dependencies
 Each notebook requires specific Python packages. Key dependencies include:
@@ -79,6 +137,8 @@ Each notebook requires specific Python packages. Key dependencies include:
 - matplotlib/seaborn: Data visualization
 - numpy: Numerical operations
 - datasets: Hugging Face dataset management
+- scikit-learn: For machine learning operations (KMeans clustering)
+- tqdm: Progress bar visualization
 
 For complete environment setup, see `environment.yml`.
 
