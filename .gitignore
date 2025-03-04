@@ -6,6 +6,7 @@ data/raster/geotiffs/
 data/processed/
 data/hf
 
+models/
 notes/
 
 .cursorrules
