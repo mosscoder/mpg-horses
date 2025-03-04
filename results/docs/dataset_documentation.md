@@ -25,16 +25,17 @@ The dataset includes the following features:
 3. `Zone`: Zone identifier
 4. `Period`: Time period identifier
 5. `Recency`: Recency indicator
-6. `Datetime`: Timestamp of the observation
-7. `Latitude`: Latitude coordinate
-8. `Longitude`: Longitude coordinate
-9. `Easting`: Easting coordinate (UTM)
-10. `Northing`: Northing coordinate (UTM)
-11. `Ellipsoidal_height`: Height above ellipsoid
-12. `geometry`: WKT representation of the point geometry
+6. `datetime_groundtruth`: Timestamp of the ground truth observation
+7. `datetime_aerialsurvey`: Timestamp when the aerial imagery was captured
+8. `Latitude`: Latitude coordinate
+9. `Longitude`: Longitude coordinate
+10. `Easting`: Easting coordinate (UTM)
+11. `Northing`: Northing coordinate (UTM)
+12. `Ellipsoidal_height`: Height above ellipsoid
 13. `orthomosaic`: Identifier for the associated orthomosaic
-14. `observation_offset`: Days between observation and orthomosaic capture
-15. `encoded_tile`: Base64-encoded image tile
+14. `tile_path`: Path to the image tile file
+15. `observation_offset`: Days between observation and orthomosaic capture
+16. `encoded_tile`: Base64-encoded image tile
 
 ## Data Collection
 
