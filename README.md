@@ -156,18 +156,20 @@ The Emlid rovers record coordinates in latitude and longitude format (WGS84). Fo
 
 #### Wrangled GeoJSON Ground Truth Data Structure
 The processed ground truth dataset is exported as a GeoJSON vector file from `01_concat_ground_truth.ipynb` with the following key metadata columns:
-- `idx`: Unique identifier for each observation point (zero-padded four-digit integer)
-- `Presence`: Boolean indicator (1 for horse pile present, 0 for absent)
-- `Zone`: Survey zone identifier
-- `Period`: Time period of the survey
-- `Recency`: Additional metadata about observation recency
-- `Datetime`: UTC timestamp of data collection
-- `Latitude`: WGS84 latitude coordinate
-- `Longitude`: WGS84 longitude coordinate
-- `Easting`: UTM Zone 11N easting coordinate (meters)
-- `Northing`: UTM Zone 11N northing coordinate (meters)
-- `Ellipsoidal_height`: Height above WGS84 ellipsoid
-- `geometry`: GeoJSON Point geometry containing coordinates
+- `idx`: Unique identifier for each point
+- `Presence`: Binary indicator (1 for presence, 0 for absence)
+- `Zone`: Zone identifier
+- `Period`: Time period identifier
+- `Recency`: Recency indicator
+- `Datetime`: Timestamp of the observation
+- `Latitude`: Latitude coordinate
+- `Longitude`: Longitude coordinate
+- `Easting`: Easting coordinate (UTM)
+- `Northing`: Northing coordinate (UTM)
+- `Ellipsoidal_height`: Height above ellipsoid
+- `orthomosaic`: Identifier for the associated orthomosaic
+- `observation_offset`: Days between observation and orthomosaic capture
+- `encoded_tile`: Base64-encoded image tile
 
 #### Absence Data Collection
 The absence dataset consists of locations where field technicians confirmed no horse piles were present. Date of collection is known and is set during wrangling.

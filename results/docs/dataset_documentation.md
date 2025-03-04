@@ -31,10 +31,9 @@ The dataset includes the following features:
 9. `Easting`: Easting coordinate (UTM)
 10. `Northing`: Northing coordinate (UTM)
 11. `Ellipsoidal_height`: Height above ellipsoid
-12. `geometry`: WKT representation of the point geometry
-13. `orthomosaic`: Identifier for the associated orthomosaic
-14. `observation_offset`: Days between observation and orthomosaic capture
-15. `encoded_tile`: Base64-encoded image tile
+12. `orthomosaic`: Identifier for the associated orthomosaic
+13. `observation_offset`: Days between observation and orthomosaic capture
+14. `encoded_tile`: Base64-encoded image tile
 
 ## Data Collection
 
