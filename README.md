@@ -161,12 +161,14 @@ The processed ground truth dataset is exported as a GeoJSON vector file from `01
 - `Zone`: Zone identifier
 - `Period`: Time period identifier
 - `Recency`: Recency indicator
-- `Datetime`: Timestamp of the observation
+- `datetime_groundtruth`: Timestamp of the ground truth observation
+- `datetime_aerialsurvey`: Timestamp when the aerial imagery was captured
 - `Latitude`: Latitude coordinate
 - `Longitude`: Longitude coordinate
 - `Easting`: Easting coordinate (UTM)
 - `Northing`: Northing coordinate (UTM)
 - `Ellipsoidal_height`: Height above ellipsoid
+- `geometry`: WKT representation of the point geometry
 - `orthomosaic`: Identifier for the associated orthomosaic
 - `observation_offset`: Days between observation and orthomosaic capture
 - `encoded_tile`: Base64-encoded image tile
