@@ -161,7 +161,7 @@ The processed ground truth dataset is exported as a GeoJSON vector file from `01
 - `Zone`: Zone identifier
 - `Period`: Time period identifier
 - `Recency`: Recency indicator
-- `Datetime`: Timestamp of the observation
+- `datetime_groundtruth`: Timestamp of the ground truth observation
 - `Latitude`: Latitude coordinate
 - `Longitude`: Longitude coordinate
 - `Easting`: Easting coordinate (UTM)
