@@ -102,6 +102,83 @@ class HorseDetectionDataset(Dataset):
             return blank_image, label
 
 
+def inspect_dataset(dataset, num_samples=3):
+    """
+    Inspect the dataset structure to understand the format of the data.
+
+    Args:
+        dataset: The dataset to inspect (DataFrame or HorseDetectionDataset)
+        num_samples: Number of samples to inspect
+    """
+    print("\n===== DATASET INSPECTION =====")
+
+    # If it's a HorseDetectionDataset, get the underlying dataframe
+    if isinstance(dataset, HorseDetectionDataset):
+        df = dataset.dataframe
+        print(f"Dataset type: HorseDetectionDataset with {len(dataset)} samples")
+    else:
+        df = dataset
+        print(f"Dataset type: {type(dataset).__name__} with {len(df)} samples")
+
+    # Print column names
+    print(f"\nColumns: {df.columns.tolist()}")
+
+    # Check for image columns
+    image_columns = [
+        col for col in df.columns if "image" in col.lower() or "tile" in col.lower()
+    ]
+    if image_columns:
+        print(f"\nPotential image columns: {image_columns}")
+
+    # Print label distribution if it's a DataFrame with 'Presence' column
+    if isinstance(df, pd.DataFrame) and "Presence" in df.columns:
+        print(f"\nLabel distribution: {df['Presence'].value_counts().to_dict()}")
+
+    # Sample a few rows to inspect
+    print(f"\nInspecting {num_samples} random samples:")
+    sample_indices = np.random.choice(len(df), min(num_samples, len(df)), replace=False)
+
+    for i, idx in enumerate(sample_indices):
+        print(f"\nSample {i+1} (index {idx}):")
+        row = df.iloc[idx]
+
+        # Print non-image columns
+        for col in df.columns:
+            if col not in image_columns and not isinstance(
+                row[col], (bytes, bytearray)
+            ):
+                print(f"  {col}: {row[col]}")
+
+        # Check image data format
+        for col in image_columns:
+            if pd.notna(row[col]):
+                img_data = row[col]
+                data_type = type(img_data).__name__
+
+                # Check if it's a data URL
+                is_data_url = False
+                if isinstance(img_data, str) and img_data.startswith("data:image"):
+                    is_data_url = True
+                    print(f"  {col}: Data URL (length: {len(img_data)})")
+                # Check if it's base64 encoded
+                elif isinstance(img_data, str):
+                    print(f"  {col}: String (length: {len(img_data)})")
+                    # Try to show the beginning of the string
+                    if len(img_data) > 0:
+                        print(
+                            f"    Starts with: {img_data[:min(30, len(img_data))]}..."
+                        )
+                # Check if it's bytes
+                elif isinstance(img_data, (bytes, bytearray)):
+                    print(f"  {col}: Binary data (length: {len(img_data)})")
+                else:
+                    print(f"  {col}: {data_type}")
+            else:
+                print(f"  {col}: None/NaN")
+
+    print("\n===== END OF INSPECTION =====\n")
+
+
 def create_model(num_classes=2):
     """Create a ResNet50 model for classification."""
     model = models.resnet50(weights="DEFAULT")
@@ -304,6 +381,9 @@ def main():
 
     print(f"Dataset size: {len(df)}")
     print(f"Label distribution: {df['Presence'].value_counts().to_dict()}")
+
+    # Inspect the dataset
+    inspect_dataset(df, num_samples=3)
 
     # Create subset if specified
     if args.subset_size > 0:
