@@ -350,6 +350,9 @@ def train_model(
     learning_rate=0.0005,
     weight_decay=0.01,
     grad_clip=1.0,
+    class_weights=None,
+    save_best=True,
+    model_path="models/best_model.pth",
 ):
     """
     Train the model with early stopping based on validation accuracy.
@@ -364,6 +367,9 @@ def train_model(
         learning_rate: Learning rate for optimizer
         weight_decay: Weight decay (L2 regularization) for optimizer
         grad_clip: Maximum norm of gradients for clipping
+        class_weights: Optional tensor of class weights for loss function
+        save_best: Whether to save the best model during training
+        model_path: Path to save the best model
 
     Returns:
         dict: Training history with loss and accuracy metrics
@@ -372,16 +378,28 @@ def train_model(
     model = model.to(device)
 
     # Define loss function and optimizer
-    criterion = (
-        nn.BCEWithLogitsLoss()
-    )  # Binary Cross Entropy with Logits for binary classification
+    if class_weights is not None:
+        class_weights = class_weights.to(device)
+        criterion = nn.BCEWithLogitsLoss(
+            pos_weight=class_weights
+        )  # Use class weights if provided
+    else:
+        criterion = (
+            nn.BCEWithLogitsLoss()
+        )  # Binary Cross Entropy with Logits for binary classification
+
     optimizer = Adam(
         model.parameters(), lr=learning_rate, weight_decay=weight_decay
     )  # Add L2 regularization with weight decay
 
     # Learning rate scheduler to reduce LR when validation loss plateaus
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=2, verbose=True
+        optimizer,
+        mode="min",
+        factor=0.3,  # More aggressive reduction (from 0.5 to 0.3)
+        patience=3,  # Reduce patience to detect plateaus earlier
+        verbose=True,
+        min_lr=1e-6,  # Set a minimum learning rate
     )
 
     # Initialize variables for early stopping
@@ -502,6 +520,22 @@ def train_model(
             epochs_no_improve = 0
             # Save the best model weights
             best_model_weights = copy.deepcopy(model.state_dict())
+
+            # Save the best model if requested
+            if save_best:
+                print(
+                    f"Saving best model with validation accuracy: {best_val_acc:.2f}%"
+                )
+                torch.save(
+                    {
+                        "epoch": epoch + 1,
+                        "model_state_dict": best_model_weights,
+                        "optimizer_state_dict": optimizer.state_dict(),
+                        "val_acc": best_val_acc,
+                        "val_loss": epoch_val_loss,
+                    },
+                    model_path,
+                )
         else:
             epochs_no_improve += 1
             if epochs_no_improve >= patience:
@@ -678,6 +712,11 @@ def main():
         help="Maximum norm for gradient clipping",
     )
     parser.add_argument(
+        "--use_class_weights",
+        action="store_true",
+        help="Use class weights to handle imbalanced data",
+    )
+    parser.add_argument(
         "--save_model", action="store_true", help="Save the trained model"
     )
     parser.add_argument(
@@ -770,17 +809,40 @@ def main():
         val_dataset = HorseDetectionDataset(val_df, transform=val_transform)
         test_dataset = HorseDetectionDataset(test_df, transform=val_transform)
 
-        print(f"Train dataset size: {len(train_dataset)}")
+        print(f"Training dataset size: {len(train_dataset)}")
         print(f"Validation dataset size: {len(val_dataset)}")
         print(f"Test dataset size: {len(test_dataset)}")
 
-        # Create data loaders with optimized settings for M3 chip
+        # Calculate class weights for imbalanced dataset
+        class_counts = train_df["Presence"].value_counts().to_dict()
+        print(f"Class distribution in training set: {class_counts}")
+
+        # Calculate weight for positive class (presence of horses)
+        # Formula: weight = n_samples / (n_classes * n_samples_for_class)
+        if args.use_class_weights and 1 in class_counts and 0 in class_counts:
+            n_samples = len(train_df)
+            n_classes = len(class_counts)
+            pos_weight = n_samples / (n_classes * class_counts[1])
+            class_weights = torch.tensor([pos_weight])
+            print(f"Using class weight for positive class: {pos_weight:.4f}")
+        else:
+            class_weights = None
+            print(
+                "Not using class weights"
+                + (
+                    " (disabled by command line)"
+                    if not args.use_class_weights
+                    else " (missing class in training data)"
+                )
+            )
+
+        # Create data loaders optimized for M3 chip
         train_loader = DataLoader(
             train_dataset,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=4,  # Use multiple workers for parallel loading
-            pin_memory=True,  # Faster data transfer to GPU
+            num_workers=4,  # Parallel loading
+            pin_memory=True,  # Pin memory for faster transfer to GPU
         )
         val_loader = DataLoader(
             val_dataset,
@@ -803,7 +865,7 @@ def main():
             f"Model created with {sum(p.numel() for p in model.parameters() if p.requires_grad):,} trainable parameters"
         )
 
-        # Train model
+        # Train the model
         history = train_model(
             model,
             train_loader,
@@ -814,6 +876,9 @@ def main():
             learning_rate=args.learning_rate,
             weight_decay=args.weight_decay,
             grad_clip=args.grad_clip,
+            class_weights=class_weights,  # Pass class weights to training function
+            save_best=args.save_model,
+            model_path="models/best_model.pth",
         )
 
         # Evaluate model on test set
