@@ -35,6 +35,9 @@ import zipfile
 from sklearn.metrics import confusion_matrix, classification_report
 import multiprocessing
 import psutil  # For memory monitoring
+import itertools
+import json
+from datetime import datetime
 
 
 # Set up device
@@ -53,7 +56,7 @@ def get_device():
         print("Using MPS (Metal Performance Shaders) device")
     else:
         device = torch.device("cpu")
-        print("Using CPU device")
+        print("Using CPU")
     return device
 
 
@@ -724,30 +727,243 @@ def get_optimal_num_workers():
         return 4
 
 
+def set_seed(seed=42):
+    """
+    Set seed for reproducibility across all random number generators.
+
+    Args:
+        seed (int): Seed value for random number generators
+    """
+    import random
+
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    # For CUDA
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+    # For MPS (Metal)
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        if hasattr(torch.mps, "manual_seed"):
+            torch.mps.manual_seed(seed)
+
+    print(f"Random seed set to {seed} for reproducibility")
+
+
+def hyperparameter_tuning(
+    train_dataset,
+    val_dataset,
+    test_dataset,
+    param_grid,
+    device,
+    results_dir="results/hyperparameter_tuning",
+    seed=42,
+):
+    """
+    Perform grid search hyperparameter tuning.
+
+    Args:
+        train_dataset: Training dataset
+        val_dataset: Validation dataset
+        test_dataset: Test dataset
+        param_grid (dict): Dictionary with hyperparameter names as keys and lists of values to try
+        device: PyTorch device
+        results_dir (str): Directory to save results
+        seed (int): Random seed for reproducibility
+
+    Returns:
+        dict: Best hyperparameters and their performance
+    """
+    # Create results directory if it doesn't exist
+    os.makedirs(results_dir, exist_ok=True)
+
+    # Generate all combinations of hyperparameters
+    keys = list(param_grid.keys())
+    values = list(param_grid.values())
+    hyperparameter_combinations = list(itertools.product(*values))
+
+    # Prepare results tracking
+    results = []
+    best_val_acc = 0.0
+    best_params = None
+    best_model = None
+
+    # Create a timestamp for this tuning session
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    session_dir = os.path.join(results_dir, f"tuning_session_{timestamp}")
+    os.makedirs(session_dir, exist_ok=True)
+
+    print(
+        f"Starting hyperparameter tuning with {len(hyperparameter_combinations)} combinations"
+    )
+    print(f"Results will be saved to {session_dir}")
+
+    # Iterate through all hyperparameter combinations
+    for i, combination in enumerate(hyperparameter_combinations):
+        params = dict(zip(keys, combination))
+        print(f"\nTrial {i+1}/{len(hyperparameter_combinations)}")
+        print(f"Parameters: {params}")
+
+        # Set seed for reproducibility
+        set_seed(seed)
+
+        # Create data loaders with current batch size
+        batch_size = params.get("batch_size", 64)
+        num_workers = params.get("num_workers", get_optimal_num_workers())
+
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            pin_memory=True,
+        )
+
+        val_loader = DataLoader(
+            val_dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=num_workers,
+            pin_memory=True,
+        )
+
+        test_loader = DataLoader(
+            test_dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=num_workers,
+            pin_memory=True,
+        )
+
+        # Create model with current dropout rate
+        dropout_rate = params.get("dropout_rate", 0.5)
+        model = create_model(dropout_rate=dropout_rate)
+        model.to(device)
+
+        # Calculate class weights if specified
+        class_weights = None
+        if params.get("use_class_weights", False):
+            # Extract labels from the training dataset
+            labels = [sample[1] for sample in train_dataset]
+            class_counts = np.bincount(labels)
+            if len(class_counts) > 1:  # Ensure we have counts for both classes
+                # Calculate weights inversely proportional to class frequencies
+                weights = 1.0 / class_counts
+                weights = weights / weights.sum()  # Normalize
+                class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
+                print(f"Using class weights: {class_weights}")
+
+        # Train the model with current hyperparameters
+        model_path = os.path.join(session_dir, f"model_trial_{i+1}.pth")
+        history = train_model(
+            model=model,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            device=device,
+            num_epochs=params.get("num_epochs", 10),
+            patience=params.get("patience", 5),
+            learning_rate=params.get("learning_rate", 0.001),
+            weight_decay=params.get("weight_decay", 0.01),
+            grad_clip=params.get("grad_clip", 1.0),
+            class_weights=class_weights,
+            save_best=True,
+            model_path=model_path,
+            monitor_memory=True,
+        )
+
+        # Evaluate on validation set
+        model.load_state_dict(torch.load(model_path))
+        model.eval()
+
+        # Get validation accuracy from history
+        val_acc = max(history["val_acc"])
+
+        # Save history plot
+        plot_path = os.path.join(session_dir, f"history_trial_{i+1}.png")
+        plot_history(history, save_path=plot_path)
+
+        # Evaluate on test set
+        test_loss, test_acc, conf_matrix, report = evaluate_model(
+            model, test_loader, device
+        )
+
+        # Record results
+        trial_results = {
+            "trial": i + 1,
+            "params": params,
+            "val_acc": val_acc,
+            "test_acc": test_acc,
+            "test_loss": test_loss,
+            "confusion_matrix": conf_matrix.tolist(),
+            "classification_report": report,
+        }
+
+        results.append(trial_results)
+
+        # Update best parameters if this trial is better
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            best_params = params
+            best_model = copy.deepcopy(model)
+
+            # Save best model separately
+            torch.save(
+                best_model.state_dict(), os.path.join(session_dir, "best_model.pth")
+            )
+
+        # Save current results after each trial
+        with open(os.path.join(session_dir, "tuning_results.json"), "w") as f:
+            json.dump(results, f, indent=4)
+
+    # Save final summary
+    summary = {
+        "best_params": best_params,
+        "best_val_acc": best_val_acc,
+        "num_trials": len(hyperparameter_combinations),
+        "param_grid": param_grid,
+    }
+
+    with open(os.path.join(session_dir, "tuning_summary.json"), "w") as f:
+        json.dump(summary, f, indent=4)
+
+    print("\nHyperparameter tuning completed!")
+    print(f"Best parameters: {best_params}")
+    print(f"Best validation accuracy: {best_val_acc:.4f}")
+
+    return best_params, best_val_acc, best_model
+
+
 def main():
-    """Main function to run the horse detection model."""
-    # Parse arguments
-    parser = argparse.ArgumentParser(description="Train a horse detection model")
+    parser = argparse.ArgumentParser(description="Horse Detection Model")
+
+    # Data parameters
+    parser.add_argument(
+        "--subset_size",
+        type=int,
+        default=None,
+        help="Size of subset to use (default: use all data)",
+    )
     parser.add_argument(
         "--batch_size", type=int, default=32, help="Batch size for training"
     )
+    parser.add_argument(
+        "--num_workers",
+        type=int,
+        default=None,
+        help="Number of worker processes for data loading",
+    )
+
+    # Training parameters
     parser.add_argument(
         "--num_epochs", type=int, default=10, help="Number of epochs to train"
     )
     parser.add_argument(
         "--patience", type=int, default=3, help="Patience for early stopping"
-    )
-    parser.add_argument(
-        "--subset_size",
-        type=int,
-        default=None,
-        help="Size of subset to use (for testing)",
-    )
-    parser.add_argument(
-        "--test_size",
-        type=float,
-        default=0.2,
-        help="Proportion of data to use for testing",
     )
     parser.add_argument(
         "--learning_rate",
@@ -759,7 +975,7 @@ def main():
         "--weight_decay",
         type=float,
         default=0.01,
-        help="Weight decay (L2 regularization) for optimizer",
+        help="Weight decay (L2 penalty) for optimizer",
     )
     parser.add_argument(
         "--dropout_rate",
@@ -768,29 +984,45 @@ def main():
         help="Dropout rate for regularization",
     )
     parser.add_argument(
-        "--grad_clip",
-        type=float,
-        default=1.0,
-        help="Maximum norm for gradient clipping",
+        "--grad_clip", type=float, default=1.0, help="Gradient clipping value"
     )
     parser.add_argument(
         "--use_class_weights",
         action="store_true",
-        help="Use class weights to handle imbalanced data",
+        help="Use class weights for imbalanced data",
     )
-    parser.add_argument(
-        "--num_workers",
-        type=int,
-        default=None,
-        help="Number of worker processes for data loading (default: auto-detect)",
-    )
+
+    # Model parameters
     parser.add_argument(
         "--save_model", action="store_true", help="Save the trained model"
     )
     parser.add_argument(
         "--plot_history", action="store_true", help="Plot training history"
     )
+
+    # Reproducibility
+    parser.add_argument(
+        "--seed", type=int, default=42, help="Random seed for reproducibility"
+    )
+
+    # Hyperparameter tuning
+    parser.add_argument(
+        "--tune_hyperparams", action="store_true", help="Perform hyperparameter tuning"
+    )
+    parser.add_argument(
+        "--param_grid_file",
+        type=str,
+        default=None,
+        help="JSON file with parameter grid for tuning",
+    )
+
     args = parser.parse_args()
+
+    # Set random seed for reproducibility
+    set_seed(args.seed)
+
+    # Get device
+    device = get_device()
 
     try:
         # Check if cached dataset exists
@@ -864,7 +1096,7 @@ def main():
 
         # Split into train and test sets
         train_df, test_df = train_test_split(
-            df, test_size=args.test_size, stratify=df["Presence"], random_state=42
+            df, test_size=0.2, stratify=df["Presence"], random_state=42
         )
 
         # Further split train into train and validation
@@ -881,102 +1113,143 @@ def main():
         print(f"Validation dataset size: {len(val_dataset)}")
         print(f"Test dataset size: {len(test_dataset)}")
 
-        # Calculate class weights for imbalanced dataset
-        class_counts = train_df["Presence"].value_counts().to_dict()
-        print(f"Class distribution in training set: {class_counts}")
+        # Hyperparameter tuning mode
+        if args.tune_hyperparams:
+            print("Starting hyperparameter tuning...")
 
-        # Calculate weight for positive class (presence of horses)
-        # Formula: weight = n_samples / (n_classes * n_samples_for_class)
-        if args.use_class_weights and 1 in class_counts and 0 in class_counts:
-            n_samples = len(train_df)
-            n_classes = len(class_counts)
-            pos_weight = n_samples / (n_classes * class_counts[1])
-            class_weights = torch.tensor([pos_weight])
-            print(f"Using class weight for positive class: {pos_weight:.4f}")
-        else:
-            class_weights = None
-            print(
-                "Not using class weights"
-                + (
-                    " (disabled by command line)"
-                    if not args.use_class_weights
-                    else " (missing class in training data)"
-                )
+            # Load parameter grid from file if provided, otherwise use default
+            if args.param_grid_file and os.path.exists(args.param_grid_file):
+                with open(args.param_grid_file, "r") as f:
+                    param_grid = json.load(f)
+                print(f"Loaded parameter grid from {args.param_grid_file}")
+            else:
+                # Default parameter grid
+                param_grid = {
+                    "learning_rate": [0.001, 0.0005, 0.0001],
+                    "weight_decay": [0.01, 0.001, 0.0001],
+                    "dropout_rate": [0.3, 0.5, 0.7],
+                    "batch_size": [32, 64, 128],
+                    "num_epochs": [15],
+                    "patience": [5],
+                    "grad_clip": [1.0],
+                    "use_class_weights": [True, False],
+                }
+                print("Using default parameter grid")
+
+            # Perform hyperparameter tuning
+            best_params, best_val_acc, best_model = hyperparameter_tuning(
+                train_dataset=train_dataset,
+                val_dataset=val_dataset,
+                test_dataset=test_dataset,
+                param_grid=param_grid,
+                device=device,
+                seed=args.seed,
             )
 
-        # Create data loaders optimized for M3 chip
-        num_workers = (
-            args.num_workers
-            if args.num_workers is not None
-            else get_optimal_num_workers()
-        )
-        print(f"Using {num_workers} workers for data loading")
+            print("\nBest hyperparameters:")
+            for param, value in best_params.items():
+                print(f"  {param}: {value}")
+            print(f"Best validation accuracy: {best_val_acc:.4f}")
 
-        train_loader = DataLoader(
-            train_dataset,
-            batch_size=args.batch_size,
-            shuffle=True,
-            num_workers=num_workers,  # Use optimal number of workers
-            pin_memory=True,  # Pin memory for faster transfer to GPU
-        )
-        val_loader = DataLoader(
-            val_dataset,
-            batch_size=args.batch_size,
-            shuffle=False,
-            num_workers=num_workers,  # Use optimal number of workers
-            pin_memory=True,
-        )
-        test_loader = DataLoader(
-            test_dataset,
-            batch_size=args.batch_size,
-            shuffle=False,
-            num_workers=num_workers,  # Use optimal number of workers
-            pin_memory=True,
-        )
+        else:
+            # Regular training mode
+            # Calculate class weights for imbalanced dataset
+            class_counts = train_df["Presence"].value_counts().to_dict()
+            print(f"Class distribution in training set: {class_counts}")
 
-        # Create model
-        model = create_model(num_classes=2, dropout_rate=args.dropout_rate)
-        print(
-            f"Model created with {sum(p.numel() for p in model.parameters() if p.requires_grad):,} trainable parameters"
-        )
+            # Calculate weight for positive class (presence of horses)
+            # Formula: weight = n_samples / (n_classes * n_samples_for_class)
+            if args.use_class_weights and 1 in class_counts and 0 in class_counts:
+                n_samples = len(train_df)
+                n_classes = len(class_counts)
+                pos_weight = n_samples / (n_classes * class_counts[1])
+                class_weights = torch.tensor([pos_weight])
+                print(f"Using class weight for positive class: {pos_weight:.4f}")
+            else:
+                class_weights = None
+                print(
+                    "Not using class weights"
+                    + (
+                        " (disabled by command line)"
+                        if not args.use_class_weights
+                        else " (missing class in training data)"
+                    )
+                )
 
-        # Train the model
-        history = train_model(
-            model,
-            train_loader,
-            val_loader,
-            device=get_device(),
-            num_epochs=args.num_epochs,
-            patience=args.patience,
-            learning_rate=args.learning_rate,
-            weight_decay=args.weight_decay,
-            grad_clip=args.grad_clip,
-            class_weights=class_weights,  # Pass class weights to training function
-            save_best=args.save_model,
-            model_path="models/best_model.pth",
-            monitor_memory=True,  # Pass monitor_memory to training function
-        )
+            # Create data loaders optimized for M3 chip
+            num_workers = (
+                args.num_workers
+                if args.num_workers is not None
+                else get_optimal_num_workers()
+            )
+            print(f"Using {num_workers} workers for data loading")
 
-        # Evaluate model on test set
-        print("\nEvaluating model on test set...")
-        device = get_device()
-        test_loss, test_accuracy = evaluate_model(model, test_loader, device)
+            train_loader = DataLoader(
+                train_dataset,
+                batch_size=args.batch_size,
+                shuffle=True,
+                num_workers=num_workers,  # Use optimal number of workers
+                pin_memory=True,  # Pin memory for faster transfer to GPU
+            )
+            val_loader = DataLoader(
+                val_dataset,
+                batch_size=args.batch_size,
+                shuffle=False,
+                num_workers=num_workers,  # Use optimal number of workers
+                pin_memory=True,
+            )
+            test_loader = DataLoader(
+                test_dataset,
+                batch_size=args.batch_size,
+                shuffle=False,
+                num_workers=num_workers,  # Use optimal number of workers
+                pin_memory=True,
+            )
 
-        # Save model if specified
-        if args.save_model:
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            model_path = f"models/horse_detection_{timestamp}.pth"
-            os.makedirs(os.path.dirname(model_path), exist_ok=True)
-            torch.save(model.state_dict(), model_path)
-            print(f"Model saved to {model_path}")
+            # Create model
+            model = create_model(dropout_rate=args.dropout_rate)
+            print(
+                f"Model created with {sum(p.numel() for p in model.parameters() if p.requires_grad):,} trainable parameters"
+            )
 
-        # Plot history if specified
-        if args.plot_history:
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            plot_path = f"results/figures/horse_detection_history_{timestamp}.png"
-            os.makedirs(os.path.dirname(plot_path), exist_ok=True)
-            plot_history(history, save_path=plot_path)
-            print(f"Training history plot saved to {plot_path}")
+            # Train the model
+            history = train_model(
+                model,
+                train_loader,
+                val_loader,
+                device=device,
+                num_epochs=args.num_epochs,
+                patience=args.patience,
+                learning_rate=args.learning_rate,
+                weight_decay=args.weight_decay,
+                grad_clip=args.grad_clip,
+                class_weights=class_weights,  # Pass class weights to training function
+                save_best=args.save_model,
+                model_path="models/best_model.pth",
+                monitor_memory=True,  # Pass monitor_memory to training function
+            )
+
+            # Evaluate model on test set
+            print("\nEvaluating model on test set...")
+            test_loss, test_accuracy, conf_matrix, report = evaluate_model(
+                model, test_loader, device
+            )
+
+            # Save model if specified
+            if args.save_model:
+                timestamp = time.strftime("%Y%m%d_%H%M%S")
+                model_path = f"models/horse_detection_{timestamp}.pth"
+                os.makedirs(os.path.dirname(model_path), exist_ok=True)
+                torch.save(model.state_dict(), model_path)
+                print(f"Model saved to {model_path}")
+
+            # Plot history if specified
+            if args.plot_history:
+                timestamp = time.strftime("%Y%m%d_%H%M%S")
+                plot_path = f"results/figures/horse_detection_history_{timestamp}.png"
+                os.makedirs(os.path.dirname(plot_path), exist_ok=True)
+                plot_history(history, save_path=plot_path)
+                print(f"Training history plot saved to {plot_path}")
 
     except Exception as e:
         print(f"An error occurred: {str(e)}")
@@ -984,10 +1257,4 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        import traceback
-
-        print(f"Error: {str(e)}")
-        traceback.print_exc()
+    main()
