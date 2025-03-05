@@ -90,8 +90,22 @@ class HorseDetectionDataset(Dataset):
             # First try to get from image_base64 field
             if "image_base64" in row and not pd.isna(row["image_base64"]):
                 img_data = row["image_base64"]
-                # Check if img_data is binary data
-                if isinstance(img_data, bytes):
+                # Check if img_data is a string (likely base64 encoded)
+                if isinstance(img_data, str):
+                    # Handle data URL format if present
+                    if img_data.startswith("data:image"):
+                        # Extract the base64 part after the comma
+                        img_data = img_data.split(",", 1)[1]
+
+                    try:
+                        # Decode base64 string to bytes
+                        decoded_data = base64.b64decode(img_data)
+                        img = Image.open(io.BytesIO(decoded_data))
+                    except Exception as e:
+                        print(f"Error processing item {idx}: {str(e)}")
+                        img = None
+                # Handle if img_data is already bytes
+                elif isinstance(img_data, bytes):
                     try:
                         img = Image.open(io.BytesIO(img_data))
                     except Exception as e:
@@ -105,8 +119,22 @@ class HorseDetectionDataset(Dataset):
                 and not pd.isna(row["encoded_tile"])
             ):
                 img_data = row["encoded_tile"]
-                # Check if img_data is binary data
-                if isinstance(img_data, bytes):
+                # Check if img_data is a string (likely base64 encoded)
+                if isinstance(img_data, str):
+                    # Handle data URL format if present
+                    if img_data.startswith("data:image"):
+                        # Extract the base64 part after the comma
+                        img_data = img_data.split(",", 1)[1]
+
+                    try:
+                        # Decode base64 string to bytes
+                        decoded_data = base64.b64decode(img_data)
+                        img = Image.open(io.BytesIO(decoded_data))
+                    except Exception as e:
+                        print(f"Error processing item {idx}: {str(e)}")
+                        img = None
+                # Handle if img_data is already bytes
+                elif isinstance(img_data, bytes):
                     try:
                         img = Image.open(io.BytesIO(img_data))
                     except Exception as e:
