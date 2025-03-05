@@ -41,65 +41,82 @@ class HorseDetectionDataset(Dataset):
     """Dataset for horse detection."""
 
     def __init__(self, dataframe, transform=None):
-        self.dataframe = dataframe
+        """
+        Initialize the dataset with a dataframe containing image data and labels.
+
+        Args:
+            dataframe: Pandas DataFrame with image data and labels
+            transform: Optional transform to be applied to images
+        """
+        self.df = dataframe
         self.transform = transform
 
-        # Default transform if none provided
-        if self.transform is None:
-            self.transform = transforms.Compose(
-                [
-                    transforms.Resize((224, 224)),
-                    transforms.ToTensor(),
-                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-                ]
-            )
-
     def __len__(self):
-        return len(self.dataframe)
+        return len(self.df)
 
     def __getitem__(self, idx):
-        # Get row
-        row = self.dataframe.iloc[idx]
+        """
+        Get an item from the dataset by index.
 
-        # Get label (1 if horse present, 0 if not)
-        label = int(row["Presence"])
+        Args:
+            idx: Index of the item to retrieve
 
-        # Try to get image from base64 encoding
+        Returns:
+            tuple: (image, label) where label is the presence of horses (0 or 1)
+        """
         try:
-            if "image_base64" in row and pd.notna(row["image_base64"]):
+            # Get the row at the specified index
+            row = self.df.iloc[idx]
+
+            # Try to get image data from different possible sources
+            img = None
+
+            # First try to get from image_base64 field
+            if "image_base64" in row and not pd.isna(row["image_base64"]):
                 img_data = row["image_base64"]
-                # Handle data URL format - check with string methods instead of startswith
-                if isinstance(img_data, str) and img_data.startswith("data:image"):
-                    img_data = img_data.split(",")[1]
-                # Decode base64
-                image = Image.open(io.BytesIO(base64.b64decode(img_data)))
-            elif "encoded_tile" in row and pd.notna(row["encoded_tile"]):
+                # Check if img_data is binary data
+                if isinstance(img_data, bytes):
+                    try:
+                        img = Image.open(io.BytesIO(img_data))
+                    except Exception as e:
+                        print(f"Error processing item {idx}: {str(e)}")
+                        img = None
+
+            # If no image yet, try encoded_tile field
+            if (
+                img is None
+                and "encoded_tile" in row
+                and not pd.isna(row["encoded_tile"])
+            ):
                 img_data = row["encoded_tile"]
-                # Handle data URL format - check with string methods instead of startswith
-                if isinstance(img_data, str) and img_data.startswith("data:image"):
-                    img_data = img_data.split(",")[1]
-                # Decode base64
-                image = Image.open(io.BytesIO(base64.b64decode(img_data)))
-            else:
-                # Create a blank image if no image data found
-                print(f"No image found for item {idx}, creating blank image")
-                image = Image.new("RGB", (224, 224), color="gray")
+                # Check if img_data is binary data
+                if isinstance(img_data, bytes):
+                    try:
+                        img = Image.open(io.BytesIO(img_data))
+                    except Exception as e:
+                        print(f"Error processing item {idx}: {str(e)}")
+                        img = None
 
-            # Convert to RGB if needed
-            if image.mode != "RGB":
-                image = image.convert("RGB")
+            # If still no image, create a blank one
+            if img is None:
+                img = Image.new("RGB", (224, 224), color="gray")
 
-            # Apply transforms
+            # Apply transformations if specified
             if self.transform:
-                image = self.transform(image)
+                img = self.transform(img)
 
-            return image, label
+            # Get the label (presence of horses)
+            label = int(row["Presence"])
+
+            return img, label
 
         except Exception as e:
             print(f"Error processing item {idx}: {str(e)}")
-            # Return a blank image and the label
-            blank_image = torch.zeros(3, 224, 224)
-            return blank_image, label
+            # Return a blank image and 0 label in case of error
+            blank_img = Image.new("RGB", (224, 224), color="gray")
+            if self.transform:
+                blank_img = self.transform(blank_img)
+            return blank_img, 0
 
 
 def inspect_dataset(dataset, num_samples=3):
@@ -114,7 +131,7 @@ def inspect_dataset(dataset, num_samples=3):
 
     # If it's a HorseDetectionDataset, get the underlying dataframe
     if isinstance(dataset, HorseDetectionDataset):
-        df = dataset.dataframe
+        df = dataset.df
         print(f"Dataset type: HorseDetectionDataset with {len(dataset)} samples")
     else:
         df = dataset
@@ -343,116 +360,140 @@ def plot_history(history, save_path=None):
 
 
 def main():
+    """Main function to run the horse detection model."""
     # Parse arguments
-    parser = argparse.ArgumentParser(description="Horse Detection")
-    parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
-    parser.add_argument("--num_epochs", type=int, default=10, help="Number of epochs")
+    parser = argparse.ArgumentParser(description="Train a horse detection model")
+    parser.add_argument(
+        "--batch_size", type=int, default=32, help="Batch size for training"
+    )
+    parser.add_argument(
+        "--num_epochs", type=int, default=10, help="Number of epochs to train"
+    )
     parser.add_argument(
         "--patience", type=int, default=3, help="Patience for early stopping"
     )
     parser.add_argument(
         "--subset_size",
         type=int,
-        default=0,
-        help="Size of subset to use (0 for full dataset)",
+        default=None,
+        help="Size of subset to use (for testing)",
     )
     parser.add_argument(
-        "--test_size", type=float, default=0.2, help="Proportion of data for testing"
+        "--test_size",
+        type=float,
+        default=0.2,
+        help="Proportion of data to use for testing",
     )
-    parser.add_argument("--save_model", action="store_true", help="Save the model")
+    parser.add_argument(
+        "--save_model", action="store_true", help="Save the trained model"
+    )
     parser.add_argument(
         "--plot_history", action="store_true", help="Plot training history"
     )
     args = parser.parse_args()
 
-    # Create directories
-    os.makedirs("models", exist_ok=True)
-    os.makedirs("results/figures", exist_ok=True)
-    os.makedirs("data/cached_datasets", exist_ok=True)
+    try:
+        # Check if cached dataset exists
+        dataset_path = "data/cached_datasets/mpg-ranch_horse-detection.parquet"
+        if not os.path.exists(dataset_path):
+            print(f"Dataset not found at {dataset_path}")
+            print("Please run the data preparation script first.")
+            return
 
-    # Load dataset
-    cache_file = "data/cached_datasets/mpg-ranch_horse-detection.parquet"
-    if os.path.exists(cache_file):
-        print(f"Loading dataset from cache: {cache_file}")
-        df = pd.read_parquet(cache_file)
-    else:
-        print("Cached dataset not found. Please run the data preparation script first.")
-        return
+        # Load dataset
+        df = pd.read_parquet(dataset_path)
+        print(f"Dataset size: {len(df)}")
+        print(f"Label distribution: {dict(df['Presence'].value_counts())}")
 
-    print(f"Dataset size: {len(df)}")
-    print(f"Label distribution: {df['Presence'].value_counts().to_dict()}")
+        # Inspect dataset
+        inspect_dataset(df, num_samples=3)
 
-    # Inspect the dataset
-    inspect_dataset(df, num_samples=3)
+        # Create subset if specified
+        if args.subset_size:
+            print(f"Creating subset of {args.subset_size} samples")
+            # Create a stratified sample based on the presence of horses
+            df_horses = df[df["Presence"] == 1]
+            df_no_horses = df[df["Presence"] == 0]
 
-    # Create subset if specified
-    if args.subset_size > 0:
-        print(f"Creating subset of {args.subset_size} samples")
-        # Stratified sampling
-        presence_1 = df[df["Presence"] == 1].sample(
-            n=min(args.subset_size // 2, len(df[df["Presence"] == 1]))
+            # Calculate how many samples of each class to include
+            n_horses = min(len(df_horses), args.subset_size // 2)
+            n_no_horses = min(len(df_no_horses), args.subset_size // 2)
+
+            # Sample from each class
+            df_horses_sample = df_horses.sample(n_horses, random_state=42)
+            df_no_horses_sample = df_no_horses.sample(n_no_horses, random_state=42)
+
+            # Combine the samples
+            df = pd.concat([df_horses_sample, df_no_horses_sample])
+
+            print(f"Subset size: {len(df)}")
+            print(f"Subset label distribution: {dict(df['Presence'].value_counts())}")
+
+        # Define transforms for training and validation
+        transform = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            ]
         )
-        presence_0 = df[df["Presence"] == 0].sample(
-            n=min(args.subset_size // 2, len(df[df["Presence"] == 0]))
+
+        # Split into train and test sets
+        train_df, test_df = train_test_split(
+            df, test_size=args.test_size, stratify=df["Presence"], random_state=42
         )
-        df = pd.concat([presence_1, presence_0])
-        print(f"Subset size: {len(df)}")
-        print(f"Subset label distribution: {df['Presence'].value_counts().to_dict()}")
 
-    # Create dataset
-    dataset = HorseDetectionDataset(df)
+        # Create datasets
+        train_dataset = HorseDetectionDataset(train_df, transform=transform)
+        test_dataset = HorseDetectionDataset(test_df, transform=transform)
 
-    # Split dataset
-    train_size = int((1 - args.test_size) * len(dataset))
-    test_size = len(dataset) - train_size
-    train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
+        print(f"Train dataset size: {len(train_dataset)}")
+        print(f"Test dataset size: {len(test_dataset)}")
 
-    # Create data loaders
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        shuffle=True,
-        num_workers=0,  # Use 0 for MPS
-    )
-
-    test_loader = DataLoader(
-        test_dataset,
-        batch_size=args.batch_size,
-        shuffle=False,
-        num_workers=0,  # Use 0 for MPS
-    )
-
-    print(f"Train dataset size: {len(train_dataset)}")
-    print(f"Test dataset size: {len(test_dataset)}")
-
-    # Create model
-    model = create_model(num_classes=2)
-    print(
-        f"Model created with {sum(p.numel() for p in model.parameters() if p.requires_grad):,} trainable parameters"
-    )
-
-    # Train model
-    print("Training model...")
-    model, history = train_model(
-        model,
-        train_loader,
-        test_loader,
-        num_epochs=args.num_epochs,
-        patience=args.patience,
-    )
-
-    # Save model
-    if args.save_model:
-        model_path = (
-            f"models/horse_detection_resnet50_{time.strftime('%Y%m%d_%H%M%S')}.pt"
+        # Create data loaders
+        train_loader = DataLoader(
+            train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=0
         )
-        torch.save(model.state_dict(), model_path)
-        print(f"Model saved to {model_path}")
+        test_loader = DataLoader(
+            test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0
+        )
 
-    # Plot history
-    if args.plot_history:
-        plot_path = f"results/figures/horse_detection_history_{time.strftime('%Y%m%d_%H%M%S')}.png"
-        plot_history(history, save_path=plot_path)
+        # Create model
+        model = create_model(num_classes=2)
+        print(
+            f"Model created with {sum(p.numel() for p in model.parameters() if p.requires_grad):,} trainable parameters"
+        )
+
+        # Train model
+        device = get_device()
+        history = train_model(
+            model,
+            train_loader,
+            test_loader,
+            device=device,
+            num_epochs=args.num_epochs,
+            patience=args.patience,
+        )
+
+        # Save model if specified
+        if args.save_model:
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            model_path = f"models/horse_detection_{timestamp}.pth"
+            os.makedirs(os.path.dirname(model_path), exist_ok=True)
+            torch.save(model.state_dict(), model_path)
+            print(f"Model saved to {model_path}")
+
+        # Plot history if specified
+        if args.plot_history:
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            plot_path = f"results/figures/horse_detection_history_{timestamp}.png"
+            os.makedirs(os.path.dirname(plot_path), exist_ok=True)
+            plot_history(history, save_path=plot_path)
+            print(f"Training history plot saved to {plot_path}")
+
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
