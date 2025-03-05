@@ -1101,11 +1101,17 @@ def main():
         train_df, test_df = train_test_split(
             df, test_size=0.2, stratify=df["Presence"], random_state=42
         )
+        # Reset indices to avoid out-of-bounds errors
+        train_df = train_df.reset_index(drop=True)
+        test_df = test_df.reset_index(drop=True)
 
         # Further split train into train and validation
         train_df, val_df = train_test_split(
             train_df, test_size=0.15, stratify=train_df["Presence"], random_state=42
         )
+        # Reset indices to avoid out-of-bounds errors
+        train_df = train_df.reset_index(drop=True)
+        val_df = val_df.reset_index(drop=True)
 
         # Create datasets
         train_dataset = HorseDetectionDataset(train_df, transform=train_transform)
