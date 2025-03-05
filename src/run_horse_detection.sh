@@ -28,7 +28,7 @@ else
     fi
 fi
 
-# Get timestamp for log file
+# Set timestamp for unique log file
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 LOG_FILE="logs/horse_detection_${TIMESTAMP}.log"
 
@@ -46,6 +46,8 @@ python src/horse_detection.py \
     --save_model \
     --plot_history \
     --seed 42 \
+    --log_file "$LOG_FILE" \
     2>&1 | tee "$LOG_FILE"
 
-echo "Horse detection model training completed. Check results in results/figures/" 
+echo "Horse detection model training completed. Check results in results/figures/"
+echo "Training complete. Log file: $LOG_FILE" 
