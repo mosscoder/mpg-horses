@@ -552,7 +552,10 @@ def evaluate_model(model, test_loader, device):
     Returns:
         tuple: (test_loss, test_accuracy)
     """
+    # Set model to evaluation mode
     model.eval()
+
+    # Initialize variables
     test_loss = 0.0
     test_correct = 0
     test_total = 0
@@ -561,11 +564,14 @@ def evaluate_model(model, test_loader, device):
     criterion = nn.BCEWithLogitsLoss()
 
     # Create confusion matrix
-    all_preds = []
     all_labels = []
+    all_predictions = []
+
+    # Create progress bar for testing
+    test_pbar = tqdm(test_loader, desc="Testing")
 
     with torch.no_grad():
-        for inputs, labels in tqdm(test_loader, desc="Evaluating on test set"):
+        for inputs, labels in test_pbar:
             # Move data to device
             inputs, labels = inputs.to(device), labels.to(device)
 
@@ -584,25 +590,33 @@ def evaluate_model(model, test_loader, device):
             test_total += labels.size(0)
             test_correct += (predicted == labels).sum().item()
 
-            # Store predictions and labels for confusion matrix
-            all_preds.extend(predicted.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
+            # Update progress bar
+            test_pbar.set_postfix(
+                {"loss": test_loss / test_total, "acc": 100 * test_correct / test_total}
+            )
 
-    # Calculate final statistics
+            # Store labels and predictions for confusion matrix
+            all_labels.extend(labels.cpu().numpy())
+            all_predictions.extend(predicted.cpu().numpy())
+
+    # Calculate test statistics
     test_loss = test_loss / len(test_loader.dataset)
     test_accuracy = 100 * test_correct / test_total
 
-    print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.2f}%")
+    # Print test statistics
+    print(f"Test Loss: {test_loss:.4f}, Test Acc: {test_accuracy:.2f}%")
 
     # Print confusion matrix
-    cm = confusion_matrix(all_labels, all_preds)
+    cm = confusion_matrix(all_labels, all_predictions)
     print("\nConfusion Matrix:")
     print(cm)
 
     # Print classification report
     print("\nClassification Report:")
     print(
-        classification_report(all_labels, all_preds, target_names=["No Horse", "Horse"])
+        classification_report(
+            all_labels, all_predictions, target_names=["No Horse", "Horse"]
+        )
     )
 
     return test_loss, test_accuracy
