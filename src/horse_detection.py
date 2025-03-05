@@ -1182,4 +1182,19 @@ def main(args):
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        # Parse arguments
+        args = parse_args()
+
+        # Create directories for results and models if they don't exist
+        os.makedirs(args.results_dir, exist_ok=True)
+        os.makedirs(args.models_dir, exist_ok=True)
+        os.makedirs(args.cache_dir, exist_ok=True)
+
+        # Run main function
+        main(args)
+
+        print("Horse detection model training completed successfully")
+    except Exception as e:
+        print(f"Error in main function: {str(e)}")
+        traceback.print_exc()
