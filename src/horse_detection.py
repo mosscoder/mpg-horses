@@ -586,12 +586,20 @@ def main():
         print(f"Train dataset size: {len(train_dataset)}")
         print(f"Test dataset size: {len(test_dataset)}")
 
-        # Create data loaders
+        # Create data loaders with optimized settings for M3 chip
         train_loader = DataLoader(
-            train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=0
+            train_dataset,
+            batch_size=args.batch_size,
+            shuffle=True,
+            num_workers=4,  # Use multiple workers for parallel loading
+            pin_memory=True,  # Faster data transfer to GPU
         )
         test_loader = DataLoader(
-            test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0
+            test_dataset,
+            batch_size=args.batch_size,
+            shuffle=False,
+            num_workers=4,  # Use multiple workers for parallel loading
+            pin_memory=True,  # Faster data transfer to GPU
         )
 
         # Create model

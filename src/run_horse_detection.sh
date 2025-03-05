@@ -13,15 +13,14 @@ LOG_FILE="logs/horse_detection_${TIMESTAMP}.log"
 echo "Running horse detection model training..."
 echo "Log will be saved to $LOG_FILE"
 
-# Run the horse detection script
+# Run the horse detection script with optimized settings for M3 chip
 python src/horse_detection.py \
-  --batch_size 32 \
+  --batch_size 16 \
   --num_epochs 10 \
   --patience 3 \
   --subset_size 2000 \
   --save_model \
   --plot_history \
-  --progressive_loading \
   2>&1 | tee "$LOG_FILE"
 
 echo "Training complete. Check results in results/figures/" 
