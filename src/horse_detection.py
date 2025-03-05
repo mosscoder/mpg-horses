@@ -34,6 +34,8 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 import traceback
 import random
+import warnings
+import time
 
 # Import utility modules
 from data_utils import create_dataloaders, get_input_size
@@ -45,6 +47,14 @@ from model_utils import (
     plot_confusion_matrix,
 )
 from pytorch_model import set_seed, get_device, save_model
+
+# Suppress specific warnings
+warnings.filterwarnings(
+    "ignore", category=UserWarning, message=".*The given NumPy array is not writable.*"
+)
+warnings.filterwarnings(
+    "ignore", category=UserWarning, message=".*Palette images with Transparency.*"
+)
 
 
 # CNN model for image classification
@@ -737,6 +747,21 @@ def parse_args():
     return parser.parse_args()
 
 
+def set_seed(seed):
+    """
+    Set random seed for reproducibility across all libraries.
+
+    Args:
+        seed (int): Random seed value
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    print(f"Random seed set to {seed}")
+
+
 def download_and_cache_dataset(
     dataset_path, use_auth=False, cache_dir="data/cached_datasets"
 ):
@@ -922,115 +947,204 @@ def inspect_dataset(dataset, num_samples=5):
     print(f"\n{'='*50}")
 
 
-def main():
+def main(args):
     """
     Main function to run the horse detection model.
-    """
-    args = parse_args()
 
+    Args:
+        args: Command line arguments
+    """
     # Set random seed for reproducibility
-    random.seed(args.random_seed)
-    np.random.seed(args.random_seed)
-    torch.manual_seed(args.random_seed)
-    print(f"Random seed set to {args.random_seed}")
+    set_seed(args.seed)
 
     # Set device
     if torch.cuda.is_available():
         device = "cuda"
-        torch.cuda.manual_seed_all(args.random_seed)
     elif hasattr(torch, "mps") and torch.backends.mps.is_available():
         device = "mps"
-        # Set MPS memory management
-        if hasattr(torch.mps, "set_per_process_memory_fraction"):
-            torch.mps.set_per_process_memory_fraction(
-                0.8
-            )  # Use 80% of available memory
     else:
         device = "cpu"
 
     print(f"Using device: {device}")
 
-    # Create directories for results and models if they don't exist
-    os.makedirs(args.results_dir, exist_ok=True)
-    os.makedirs(args.models_dir, exist_ok=True)
+    # Download and cache dataset
+    dataset = download_and_cache_dataset(
+        dataset_path=args.dataset_path,
+        cache_dir=args.cache_dir,
+    )
 
-    try:
-        # Download and cache the dataset
-        print(f"Loading dataset from {args.dataset_path}")
-        dataset = download_and_cache_dataset(
-            args.dataset_path, use_auth=args.use_auth, cache_dir=args.cache_dir
+    # Print dataset info
+    print(f"Dataset size: {len(dataset)}")
+    print(f"Dataset columns: {dataset.column_names}")
+
+    # Create subset if specified
+    if args.subset_size > 0:
+        print(f"Using subset of {args.subset_size} samples")
+        # Ensure stratified sampling by presence
+        presence_counts = dataset["Presence"].value_counts()
+        print(f"Original class distribution: {presence_counts}")
+
+        # Calculate stratified sample sizes
+        total_samples = len(dataset)
+        subset_size = min(args.subset_size, total_samples)
+
+        # Create stratified subset
+        dataset = dataset.train_test_split(
+            test_size=subset_size / total_samples,
+            stratify_by_column="Presence",
+            seed=args.seed,
+        )["test"]
+
+        # Verify stratification
+        subset_presence_counts = dataset["Presence"].value_counts()
+        print(f"Subset class distribution: {subset_presence_counts}")
+    else:
+        print("Using full dataset")
+
+    # Create dataloaders
+    train_loader, test_loader = create_image_dataloaders(
+        dataset=dataset,
+        batch_size=args.batch_size,
+        test_size=args.test_size,
+        seed=args.seed,
+        device=device,
+    )
+
+    # Create model
+    if args.model_type == "cnn":
+        model = create_cnn_model(
+            num_classes=2,
+            model_type=args.cnn_model_type,
+            pretrained=True,
         )
-
-        # Inspect the dataset
-        inspect_dataset(dataset, num_samples=5)
-
-        # Use a subset of the dataset if specified
-        if args.subset_size > 0 and args.subset_size < len(dataset):
-            print(f"Using a subset of {args.subset_size} samples for faster testing")
-            # Ensure balanced classes in the subset
-            presence_1 = dataset[dataset["Presence"] == 1].sample(
-                args.subset_size // 2, random_state=args.random_seed
-            )
-            presence_0 = dataset[dataset["Presence"] == 0].sample(
-                args.subset_size // 2, random_state=args.random_seed
-            )
-            dataset = pd.concat([presence_1, presence_0]).reset_index(drop=True)
-            print(f"Subset size: {len(dataset)}")
-            print(f"Subset label distribution: {dataset['Presence'].value_counts()}")
-
-        # Create data loaders
-        print("Creating data loaders")
-        train_loader, test_loader = create_image_dataloaders(
-            dataset,
-            batch_size=args.batch_size,
-            test_size=0.2,
-            random_state=args.random_seed,
+    elif args.model_type == "vit":
+        model = create_vit_model(
+            num_classes=2,
+            model_name=args.vit_model_name,
+            pretrained=True,
         )
+    else:
+        raise ValueError(f"Invalid model type: {args.model_type}")
 
-        # Create model
-        print(f"Creating {args.model_type} model")
-        if args.model_type == "cnn":
-            model = CNNModel(
-                num_classes=2, pretrained=True, model_type=args.cnn_model_type
-            )
-        elif args.model_type == "vit":
-            model = ViTModel(num_classes=2, pretrained=True)
-        else:
-            raise ValueError(f"Unknown model type: {args.model_type}")
+    # Print model summary
+    print(f"Model type: {args.model_type}")
+    if args.model_type == "cnn":
+        print(f"CNN model type: {args.cnn_model_type}")
+    elif args.model_type == "vit":
+        print(f"ViT model name: {args.vit_model_name}")
 
-        # Train the model
-        model, history = train_model(
-            model,
-            train_loader,
-            test_loader,
-            learning_rate=args.learning_rate,
-            num_epochs=args.num_epochs,
-            patience=args.patience,
-            device=device,
-            gradient_accumulation_steps=args.gradient_accumulation_steps,
+    # Count trainable parameters
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Trainable parameters: {trainable_params:,}")
+
+    # Train model
+    print("Training model...")
+    model, history = train_model(
+        model=model,
+        train_loader=train_loader,
+        test_loader=test_loader,
+        learning_rate=args.learning_rate,
+        num_epochs=args.num_epochs,
+        patience=args.patience,
+        device=device,
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
+    )
+
+    # Save model if specified
+    if args.save_model:
+        model_path = os.path.join(
+            args.models_dir, f"horse_detection_{args.model_type}.pt"
         )
+        print(f"Saving model to {model_path}")
+        torch.save(model.state_dict(), model_path)
 
-        # Save model if requested
-        if args.save_model:
-            model_path = os.path.join(
-                args.models_dir, f"horse_detection_{args.model_type}.pt"
+    # Plot training history if specified
+    if args.plot_history:
+        history_path = os.path.join(
+            args.results_dir, f"horse_detection_{args.model_type}_history.png"
+        )
+        print(f"Plotting training history to {history_path}")
+        plot_training_history(history, history_path)
+
+    # Evaluate model on test set
+    print("Evaluating model on test set...")
+    model.eval()
+    test_correct = 0
+    test_total = 0
+
+    # Calculate class distribution in test set
+    test_class_counts = {0: 0, 1: 0}
+    test_class_correct = {0: 0, 1: 0}
+
+    with torch.no_grad():
+        for inputs, targets in tqdm(test_loader, desc="Evaluating"):
+            inputs, targets = inputs.to(device), targets.to(device)
+            outputs = model(inputs)
+            _, predicted = outputs.max(1)
+
+            # Update overall metrics
+            test_total += targets.size(0)
+            test_correct += predicted.eq(targets).sum().item()
+
+            # Update class-specific metrics
+            for i in range(targets.size(0)):
+                label = targets[i].item()
+                test_class_counts[label] += 1
+                if predicted[i].item() == label:
+                    test_class_correct[label] += 1
+
+            # Clean up memory if using MPS
+            if device == "mps":
+                del inputs, targets, outputs
+
+    # Calculate and print metrics
+    test_acc = 100.0 * test_correct / test_total
+    print(f"Test accuracy: {test_acc:.2f}%")
+
+    # Print class-specific metrics
+    for class_idx in test_class_counts:
+        if test_class_counts[class_idx] > 0:
+            class_acc = (
+                100.0 * test_class_correct[class_idx] / test_class_counts[class_idx]
             )
-            print(f"Saving model to {model_path}")
-            torch.save(model.state_dict(), model_path)
-
-        # Plot training history if requested
-        if args.plot_history:
-            plot_path = os.path.join(
-                args.results_dir, f"horse_detection_{args.model_type}_history.png"
+            print(
+                f"Class {class_idx} accuracy: {class_acc:.2f}% ({test_class_correct[class_idx]}/{test_class_counts[class_idx]})"
             )
-            print(f"Plotting training history to {plot_path}")
-            plot_training_history(history, plot_path)
 
-        print("Horse detection model training completed")
+    # Calculate confusion matrix
+    print("Confusion matrix:")
+    print(
+        f"TN: {test_class_correct[0]}, FP: {test_class_counts[0] - test_class_correct[0]}"
+    )
+    print(
+        f"FN: {test_class_counts[1] - test_class_correct[1]}, TP: {test_class_correct[1]}"
+    )
 
-    except Exception as e:
-        print(f"Error in main function: {str(e)}")
-        traceback.print_exc()
+    # Calculate precision, recall, and F1 score
+    if test_class_correct[1] + (test_class_counts[0] - test_class_correct[0]) > 0:
+        precision = test_class_correct[1] / (
+            test_class_correct[1] + (test_class_counts[0] - test_class_correct[0])
+        )
+    else:
+        precision = 0
+
+    if test_class_correct[1] + (test_class_counts[1] - test_class_correct[1]) > 0:
+        recall = test_class_correct[1] / (
+            test_class_correct[1] + (test_class_counts[1] - test_class_correct[1])
+        )
+    else:
+        recall = 0
+
+    if precision + recall > 0:
+        f1 = 2 * precision * recall / (precision + recall)
+    else:
+        f1 = 0
+
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall: {recall:.4f}")
+    print(f"F1 score: {f1:.4f}")
+
+    return model, history
 
 
 if __name__ == "__main__":
