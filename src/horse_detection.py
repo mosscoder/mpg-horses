@@ -647,6 +647,9 @@ def plot_training_history(history, output_path):
 def parse_args():
     """
     Parse command line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed arguments
     """
     parser = argparse.ArgumentParser(description="Horse Detection Model")
 
@@ -655,23 +658,25 @@ def parse_args():
         "--dataset_path",
         type=str,
         default="mpg-ranch/horse-detection",
-        help="Path to the dataset on Hugging Face or local directory",
-    )
-    parser.add_argument(
-        "--use_auth",
-        action="store_true",
-        help="Whether to use authentication for Hugging Face",
-    )
-    parser.add_argument(
-        "--use_local_dataset",
-        action="store_true",
-        help="Whether to use a local dataset instead of Hugging Face",
+        help="Path to the dataset on Hugging Face Hub",
     )
     parser.add_argument(
         "--cache_dir",
         type=str,
         default="data/cached_datasets",
         help="Directory to cache the dataset",
+    )
+    parser.add_argument(
+        "--subset_size",
+        type=int,
+        default=0,
+        help="Number of samples to use (0 for full dataset)",
+    )
+    parser.add_argument(
+        "--test_size",
+        type=float,
+        default=0.2,
+        help="Proportion of the dataset to use for testing",
     )
 
     # Model arguments
@@ -680,39 +685,59 @@ def parse_args():
         type=str,
         default="cnn",
         choices=["cnn", "vit"],
-        help="Type of model to use (cnn, vit)",
+        help="Type of model to use",
     )
     parser.add_argument(
         "--cnn_model_type",
         type=str,
-        default="resnet18",
-        help="Type of CNN model to use (resnet18, resnet50)",
+        default="resnet50",
+        choices=[
+            "resnet18",
+            "resnet34",
+            "resnet50",
+            "resnet101",
+            "efficientnet_b0",
+            "efficientnet_b1",
+            "efficientnet_b2",
+        ],
+        help="Type of CNN model to use",
     )
     parser.add_argument(
-        "--batch_size", type=int, default=16, help="Batch size for training"
-    )
-    parser.add_argument(
-        "--learning_rate", type=float, default=0.0001, help="Learning rate for training"
-    )
-    parser.add_argument(
-        "--num_epochs", type=int, default=30, help="Number of epochs to train for"
-    )
-    parser.add_argument(
-        "--patience", type=int, default=5, help="Patience for early stopping"
-    )
-    parser.add_argument(
-        "--random_seed", type=int, default=42, help="Random seed for reproducibility"
-    )
-    parser.add_argument(
-        "--device",
+        "--vit_model_name",
         type=str,
-        default="cuda" if torch.cuda.is_available() else "cpu",
-        help="Device to train on",
+        default="google/vit-base-patch16-224",
+        help="Name of ViT model to use",
+    )
+
+    # Training arguments
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=32,
+        help="Batch size for training",
+    )
+    parser.add_argument(
+        "--learning_rate",
+        type=float,
+        default=0.0001,
+        help="Learning rate for training",
+    )
+    parser.add_argument(
+        "--num_epochs",
+        type=int,
+        default=10,
+        help="Number of epochs to train for",
+    )
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=3,
+        help="Number of epochs to wait for improvement before early stopping",
     )
     parser.add_argument(
         "--gradient_accumulation_steps",
         type=int,
-        default=4,
+        default=2,
         help="Number of steps to accumulate gradients",
     )
 
@@ -724,12 +749,15 @@ def parse_args():
         help="Directory to save results",
     )
     parser.add_argument(
-        "--models_dir", type=str, default="models", help="Directory to save models"
+        "--models_dir",
+        type=str,
+        default="models",
+        help="Directory to save models",
     )
     parser.add_argument(
         "--save_model",
         action="store_true",
-        help="Whether to save the trained model",
+        help="Whether to save the model",
     )
     parser.add_argument(
         "--plot_history",
@@ -737,11 +765,17 @@ def parse_args():
         help="Whether to plot the training history",
     )
 
+    # Misc arguments
     parser.add_argument(
-        "--subset_size",
+        "--seed",
         type=int,
-        default=0,
-        help="Use a subset of the dataset for faster testing (0 for full dataset)",
+        default=42,
+        help="Random seed for reproducibility",
+    )
+    parser.add_argument(
+        "--use_auth",
+        action="store_true",
+        help="Whether to use authentication for Hugging Face Hub",
     )
 
     return parser.parse_args()
