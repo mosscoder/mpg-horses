@@ -22,21 +22,35 @@ import argparse
 import time
 import base64
 import io
+import traceback
 from PIL import Image
-from torch import nn
+from torch import nn, optim
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms, models
 from tqdm import tqdm
 from torch.optim import Adam
 import copy
+from sklearn.model_selection import train_test_split
+
 
 # Set up device
-device = torch.device(
-    "mps"
-    if torch.backends.mps.is_available()
-    else ("cuda" if torch.cuda.is_available() else "cpu")
-)
-print(f"Using device: {device}")
+def get_device():
+    """
+    Determine the available device for PyTorch.
+
+    Returns:
+        torch.device: The device to use for training
+    """
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print(f"Using CUDA device: {torch.cuda.get_device_name(0)}")
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = torch.device("mps")
+        print("Using MPS (Metal Performance Shaders) device")
+    else:
+        device = torch.device("cpu")
+        print("Using CPU device")
+    return device
 
 
 class HorseDetectionDataset(Dataset):
@@ -490,7 +504,7 @@ def main():
             model,
             train_loader,
             test_loader,
-            device=device,
+            device=get_device(),
             num_epochs=args.num_epochs,
             patience=args.patience,
         )
