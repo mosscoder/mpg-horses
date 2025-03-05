@@ -384,31 +384,36 @@ class HorseDetectionDataset(torch.utils.data.Dataset):
 
 
 def create_image_dataloaders(
-    dataset, batch_size=32, test_size=0.2, seed=42, device=None, debug=False
+    dataset,
+    batch_size=32,
+    test_size=0.2,
+    num_workers=4,
+    seed=42,
+    device=None,
+    debug=False,
 ):
     """
-    Create data loaders for training and testing.
+    Create dataloaders for image classification.
 
     Args:
-        dataset: The dataset to use
+        dataset: The dataset to use (pandas DataFrame or Hugging Face dataset)
         batch_size (int): Batch size for training
-        test_size (float): Proportion of the dataset to use for testing
+        test_size (float): Fraction of the dataset to use for testing
+        num_workers (int): Number of workers for data loading
         seed (int): Random seed for reproducibility
         device (str): Device to use for training
         debug (bool): Whether to enable debug mode
 
     Returns:
-        tuple: (train_loader, test_loader)
+        tuple: (train_dataloader, test_dataloader)
     """
-    # Determine the number of workers based on the device
-    if device == "mps":
-        # MPS (Apple Silicon) doesn't work well with multiprocessing
-        num_workers = 0
-    else:
-        # Use multiple workers for CPU and CUDA
-        num_workers = min(os.cpu_count(), 4)
+    # Set random seed for reproducibility
+    set_seed(seed)
 
-    print(f"Using {num_workers} workers for data loading")
+    # Determine number of workers based on device
+    if device == "mps":
+        # MPS doesn't work well with multiprocessing
+        num_workers = 0
 
     # Create dataset with debug mode to see what's happening
     horse_dataset = HorseDetectionDataset(dataset, debug=debug)
@@ -418,80 +423,68 @@ def create_image_dataloaders(
     test_size_int = int(dataset_size * test_size)
     train_size = dataset_size - test_size_int
 
-    # Get class distribution for stratified split
-    # Use a try-except block to handle potential errors
-    try:
-        # Get labels for stratification
-        if isinstance(dataset, pd.DataFrame):
-            # For pandas DataFrame, use the Presence column directly
-            labels = dataset["Presence"].values
-        else:
-            # For other dataset types, extract labels from the dataset
-            labels = []
-            for i in range(min(1000, dataset_size)):  # Sample a subset for efficiency
-                try:
-                    _, label = horse_dataset[i]
-                    labels.append(label)
-                except Exception as e:
-                    print(f"Error getting label for item {i}: {str(e)}")
-                    labels.append(0)  # Default to 0 if there's an error
-
-            # If we sampled, repeat the pattern to match dataset size
-            if len(labels) < dataset_size:
-                labels = labels * (dataset_size // len(labels) + 1)
-                labels = labels[:dataset_size]
-
-        print(f"Label distribution: {pd.Series(labels).value_counts().to_dict()}")
-
-        # Use sklearn for stratified split
-        from sklearn.model_selection import train_test_split
-
-        indices = list(range(dataset_size))
-        train_indices, test_indices = train_test_split(
-            indices, test_size=test_size, stratify=labels, random_state=seed
-        )
-    except Exception as e:
-        print(f"Error during stratified split: {str(e)}")
-        print("Falling back to random split")
-
-        # Fall back to random split
-        indices = list(range(dataset_size))
-        random.seed(seed)
-        random.shuffle(indices)
-        train_indices = indices[:train_size]
-        test_indices = indices[train_size:]
-
-    # Create samplers
-    train_sampler = torch.utils.data.SubsetRandomSampler(train_indices)
-    test_sampler = torch.utils.data.SubsetRandomSampler(test_indices)
-
-    # Create data loaders with prefetching for better performance
-    train_loader = DataLoader(
+    # Create train and test datasets
+    train_dataset, test_dataset = random_split(
         horse_dataset,
-        batch_size=batch_size,
-        sampler=train_sampler,
-        num_workers=num_workers,
-        pin_memory=True,
-        persistent_workers=num_workers > 0,
-        prefetch_factor=2 if num_workers > 0 else None,
-        drop_last=False,
+        [train_size, test_size_int],
+        generator=torch.Generator().manual_seed(seed),
     )
 
-    test_loader = DataLoader(
-        horse_dataset,
-        batch_size=batch_size,
-        sampler=test_sampler,
-        num_workers=num_workers,
-        pin_memory=True,
-        persistent_workers=num_workers > 0,
-        prefetch_factor=2 if num_workers > 0 else None,
-        drop_last=False,
+    # Create separate transforms for train and test
+    train_transform = transforms.Compose(
+        [
+            transforms.Resize((256, 256)),  # Resize to larger size for cropping
+            transforms.RandomCrop(224),  # Random crop for more variation
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomVerticalFlip(p=0.3),  # Add vertical flips
+            transforms.RandomRotation(15),  # Increase rotation range
+            transforms.ColorJitter(
+                brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1
+            ),  # Add color jitter
+            transforms.RandomAffine(
+                degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)
+            ),  # Add affine transformations
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            transforms.RandomErasing(p=0.2),  # Add random erasing for robustness
+        ]
     )
 
-    # Print dataset split information
-    print(f"Dataset split: {train_size} train, {test_size_int} test")
+    test_transform = transforms.Compose(
+        [
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
 
-    return train_loader, test_loader
+    # Apply transforms to datasets
+    train_dataset.dataset.transform = train_transform
+    test_dataset.dataset.transform = test_transform
+
+    # Create dataloaders with prefetching for better performance
+    train_dataloader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=(num_workers > 0),
+        drop_last=True,
+        prefetch_factor=2 if num_workers > 0 else None,
+    )
+
+    test_dataloader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=(num_workers > 0),
+        prefetch_factor=2 if num_workers > 0 else None,
+    )
+
+    return train_dataloader, test_dataloader
 
 
 def train_model(
