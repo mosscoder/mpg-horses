@@ -320,17 +320,23 @@ def create_image_dataloaders(dataset, batch_size=16, test_size=0.2, random_state
     if hasattr(torch, "mps") and torch.backends.mps.is_available():
         num_workers = 0
         print("Using MPS device: setting num_workers=0 to avoid multiprocessing issues")
+        # For MPS, use a smaller batch size and prefetch factor
+        prefetch_factor = 2
     else:
         num_workers = min(os.cpu_count(), 4)
         print(f"Using num_workers={num_workers} for data loading")
+        prefetch_factor = 2
 
-    # Create data loaders
+    # Create data loaders with prefetching for better performance
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
         pin_memory=True,
+        prefetch_factor=prefetch_factor if num_workers > 0 else None,
+        persistent_workers=num_workers > 0,
+        drop_last=True,  # Drop the last incomplete batch for more stable training
     )
 
     test_loader = DataLoader(
@@ -339,6 +345,8 @@ def create_image_dataloaders(dataset, batch_size=16, test_size=0.2, random_state
         shuffle=False,
         num_workers=num_workers,
         pin_memory=True,
+        prefetch_factor=prefetch_factor if num_workers > 0 else None,
+        persistent_workers=num_workers > 0,
     )
 
     return train_loader, test_loader
@@ -383,7 +391,9 @@ def train_model(
     model = model.to(device)
 
     # Set up optimizer and loss function
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=learning_rate, weight_decay=0.01
+    )
 
     # Add learning rate scheduler
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -406,7 +416,8 @@ def train_model(
     }
 
     # Enable mixed precision training if available
-    scaler = torch.cuda.amp.GradScaler() if device == "cuda" else None
+    use_amp = device == "cuda"
+    scaler = torch.cuda.amp.GradScaler() if use_amp else None
 
     # Training loop
     for epoch in range(num_epochs):
@@ -430,7 +441,7 @@ def train_model(
             inputs, targets = inputs.to(device), targets.to(device)
 
             # Forward pass with mixed precision if available
-            if scaler is not None:
+            if use_amp:
                 with torch.cuda.amp.autocast():
                     outputs = model(inputs)
                     loss = criterion(outputs, targets)
@@ -506,8 +517,13 @@ def train_model(
                 inputs, targets = inputs.to(device), targets.to(device)
 
                 # Forward pass
-                outputs = model(inputs)
-                loss = criterion(outputs, targets)
+                if use_amp:
+                    with torch.cuda.amp.autocast():
+                        outputs = model(inputs)
+                        loss = criterion(outputs, targets)
+                else:
+                    outputs = model(inputs)
+                    loss = criterion(outputs, targets)
 
                 # Calculate metrics
                 val_loss += loss.item()
