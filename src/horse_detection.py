@@ -36,6 +36,7 @@ import traceback
 import random
 import warnings
 import time
+from collections import Counter
 
 # Import utility modules
 from data_utils import create_dataloaders, get_input_size
@@ -136,6 +137,20 @@ class HorseDetectionDataset(torch.utils.data.Dataset):
         self.dataset = dataset
         self.debug = debug
 
+        # Identify image columns
+        self.image_columns = []
+        if isinstance(dataset, pd.DataFrame):
+            for col in dataset.columns:
+                if (
+                    "image" in col.lower()
+                    or "tile" in col.lower()
+                    or "encoded" in col.lower()
+                ):
+                    self.image_columns.append(col)
+
+        if self.debug:
+            print(f"Identified image columns: {self.image_columns}")
+
         # Set up transforms
         if transform is None:
             # Default transforms for training
@@ -231,51 +246,118 @@ class HorseDetectionDataset(torch.utils.data.Dataset):
             # Try to get the image from various possible fields
             image = None
 
-            # Check for base64 encoded image
-            for field in ["image_base64", "encoded_tile", "image"]:
-                if hasattr(item, "get"):
-                    # For Hugging Face datasets
+            # For pandas DataFrame
+            if isinstance(self.dataset, pd.DataFrame):
+                # Try each image column in order of preference
+                for col in self.image_columns:
+                    if col in item.index and pd.notna(item[col]):
+                        image_data = item[col]
+
+                        # Handle base64 encoded images
+                        if isinstance(image_data, str) and (
+                            image_data.startswith("data:image") or len(image_data) > 100
+                        ):
+                            try:
+                                # Extract base64 content if it's a data URL
+                                if image_data.startswith("data:image"):
+                                    image_data = image_data.split(",")[1]
+
+                                # Decode base64
+                                img_data = base64.b64decode(image_data)
+                                image = Image.open(io.BytesIO(img_data))
+
+                                # Convert to RGB if needed
+                                if image.mode != "RGB":
+                                    image = image.convert("RGB")
+
+                                if self.debug:
+                                    print(
+                                        f"Successfully loaded image from {col} for item {idx}"
+                                    )
+                                break
+                            except Exception as e:
+                                if self.debug:
+                                    print(
+                                        f"Error decoding base64 from {col} for item {idx}: {str(e)}"
+                                    )
+                                continue
+
+                        # Handle file paths
+                        elif isinstance(image_data, str) and os.path.exists(image_data):
+                            try:
+                                image = Image.open(image_data)
+
+                                # Convert to RGB if needed
+                                if image.mode != "RGB":
+                                    image = image.convert("RGB")
+
+                                if self.debug:
+                                    print(
+                                        f"Successfully loaded image from file {image_data} for item {idx}"
+                                    )
+                                break
+                            except Exception as e:
+                                if self.debug:
+                                    print(
+                                        f"Error loading image from file {image_data} for item {idx}: {str(e)}"
+                                    )
+                                continue
+
+            # For Hugging Face datasets
+            else:
+                # Check for image fields
+                for field in ["image_base64", "encoded_tile", "image"]:
                     if field in item:
                         image_data = item[field]
-                        if isinstance(image_data, str) and image_data.startswith(
-                            "data:image"
-                        ):
-                            # Handle data URL format
-                            image_data = image_data.split(",")[1]
 
-                        if isinstance(image_data, str):
+                        # Handle base64 encoded images
+                        if isinstance(image_data, str) and (
+                            image_data.startswith("data:image") or len(image_data) > 100
+                        ):
                             try:
-                                image = Image.open(
-                                    io.BytesIO(base64.b64decode(image_data))
-                                )
+                                # Extract base64 content if it's a data URL
+                                if image_data.startswith("data:image"):
+                                    image_data = image_data.split(",")[1]
+
+                                # Decode base64
+                                img_data = base64.b64decode(image_data)
+                                image = Image.open(io.BytesIO(img_data))
+
+                                # Convert to RGB if needed
+                                if image.mode != "RGB":
+                                    image = image.convert("RGB")
+
+                                if self.debug:
+                                    print(
+                                        f"Successfully loaded image from {field} for item {idx}"
+                                    )
                                 break
                             except Exception as e:
                                 if self.debug:
-                                    print(f"Error decoding base64 image: {str(e)}")
+                                    print(
+                                        f"Error decoding base64 from {field} for item {idx}: {str(e)}"
+                                    )
                                 continue
-                        elif hasattr(image_data, "convert_to_pil"):
-                            # For Hugging Face image type
-                            image = image_data.convert_to_pil()
-                            break
-                else:
-                    # For pandas DataFrames
-                    if field in item.index and item[field] is not None:
-                        image_data = item[field]
-                        if isinstance(image_data, str) and image_data.startswith(
-                            "data:image"
-                        ):
-                            # Handle data URL format
-                            image_data = image_data.split(",")[1]
 
-                        if isinstance(image_data, str):
+                        # Handle Hugging Face image type
+                        elif hasattr(image_data, "convert_to_pil"):
                             try:
-                                image = Image.open(
-                                    io.BytesIO(base64.b64decode(image_data))
-                                )
+                                image = image_data.convert_to_pil()
+
+                                # Convert to RGB if needed
+                                if image.mode != "RGB":
+                                    image = image.convert("RGB")
+
+                                if self.debug:
+                                    print(
+                                        f"Successfully loaded image from {field} for item {idx}"
+                                    )
                                 break
                             except Exception as e:
                                 if self.debug:
-                                    print(f"Error decoding base64 image: {str(e)}")
+                                    print(
+                                        f"Error converting image from {field} for item {idx}: {str(e)}"
+                                    )
                                 continue
 
             # If no image found, create a blank image
@@ -300,7 +382,7 @@ class HorseDetectionDataset(torch.utils.data.Dataset):
 
 
 def create_image_dataloaders(
-    dataset, batch_size=32, test_size=0.2, seed=42, device=None
+    dataset, batch_size=32, test_size=0.2, seed=42, device=None, debug=False
 ):
     """
     Create data loaders for training and testing.
@@ -311,6 +393,7 @@ def create_image_dataloaders(
         test_size (float): Proportion of the dataset to use for testing
         seed (int): Random seed for reproducibility
         device (str): Device to use for training
+        debug (bool): Whether to enable debug mode
 
     Returns:
         tuple: (train_loader, test_loader)
@@ -326,7 +409,7 @@ def create_image_dataloaders(
     print(f"Using {num_workers} workers for data loading")
 
     # Create dataset with debug mode to see what's happening
-    horse_dataset = HorseDetectionDataset(dataset, debug=True)
+    horse_dataset = HorseDetectionDataset(dataset, debug=debug)
 
     # Split dataset into train and test sets
     dataset_size = len(horse_dataset)
@@ -892,87 +975,109 @@ def download_and_cache_dataset(
 
 def inspect_dataset(dataset, num_samples=5):
     """
-    Inspect the dataset to verify image encoding.
+    Inspect the dataset to understand its structure.
 
     Args:
-        dataset (pd.DataFrame): The dataset to inspect
+        dataset: The dataset to inspect
         num_samples (int): Number of samples to inspect
     """
-    print(f"\n{'='*50}")
-    print("DATASET INSPECTION")
-    print(f"{'='*50}")
+    print("\n" + "=" * 50)
+    print("Dataset Inspection")
+    print("=" * 50)
+
+    # Print dataset type and size
     print(f"Dataset type: {type(dataset)}")
-    print(f"Dataset shape: {dataset.shape}")
-    print(f"Dataset columns: {dataset.columns.tolist()}")
+    if hasattr(dataset, "column_names"):
+        print(f"Dataset columns: {dataset.column_names}")
+    elif hasattr(dataset, "columns"):
+        print(f"Dataset columns: {dataset.columns.tolist()}")
+    print(f"Dataset size: {len(dataset)}")
+
+    # Print label distribution
+    if isinstance(dataset, pd.DataFrame) and "Presence" in dataset.columns:
+        print(f"Label distribution: {dataset['Presence'].value_counts().to_dict()}")
 
     # Check for image columns
     image_columns = []
-    for col in dataset.columns:
-        if "image" in col.lower() or "tile" in col.lower() or "encoded" in col.lower():
-            image_columns.append(col)
+    if isinstance(dataset, pd.DataFrame):
+        for col in dataset.columns:
+            if "image" in col.lower() or "tile" in col.lower():
+                image_columns.append(col)
 
-    print(f"\nPotential image columns: {image_columns}")
-
-    # Check for label column
-    if "Presence" in dataset.columns:
-        print(f"\nLabel column 'Presence' found")
-        print(f"Label distribution:\n{dataset['Presence'].value_counts()}")
-    else:
-        print("\nWARNING: Label column 'Presence' not found!")
+    print(f"Potential image columns: {image_columns}")
 
     # Inspect a few samples
-    print(f"\nInspecting {num_samples} random samples:")
-    sample_indices = np.random.choice(
-        len(dataset), min(num_samples, len(dataset)), replace=False
-    )
+    print("\nSample Inspection:")
+    for i in range(min(num_samples, len(dataset))):
+        print(f"\nSample {i+1}:")
+        if isinstance(dataset, pd.DataFrame):
+            row = dataset.iloc[i]
+            print(f"  Presence: {row.get('Presence', 'N/A')}")
 
-    for i, idx in enumerate(sample_indices):
-        print(f"\nSample {i+1}/{num_samples} (Index {idx}):")
-        row = dataset.iloc[idx]
+            # Check image columns
+            for col in image_columns:
+                if pd.notna(row[col]):
+                    print(f"  {col}: {type(row[col]).__name__}")
+                    if isinstance(row[col], str):
+                        if row[col].startswith("data:image"):
+                            print(f"    Data URL format, length: {len(row[col])}")
+                        elif len(row[col]) > 100:
+                            print(f"    Likely base64, length: {len(row[col])}")
+                            try:
+                                img_data = base64.b64decode(
+                                    row[col].split(",")[-1]
+                                    if "," in row[col]
+                                    else row[col]
+                                )
+                                img = Image.open(io.BytesIO(img_data))
+                                print(
+                                    f"    Successfully decoded: {img.format} image, size {img.size}"
+                                )
+                            except Exception as e:
+                                print(f"    Failed to decode: {str(e)}")
+                        elif os.path.exists(row[col]):
+                            print(
+                                f"  {col}: File path (exists: {os.path.exists(row[col])})"
+                            )
+                            try:
+                                img = Image.open(row[col])
+                                print(
+                                    f"    Successfully loaded: {img.format} image, size {img.size}"
+                                )
+                            except Exception as e:
+                                print(f"    Failed to load: {str(e)}")
+                        else:
+                            print(
+                                f"  {col}: {type(row[col]).__name__} (length: {len(str(row[col]))})"
+                            )
+        else:
+            # For Hugging Face datasets
+            item = dataset[i]
+            print(f"  Presence: {item.get('Presence', 'N/A')}")
 
-        # Print non-image columns
-        for col in dataset.columns:
-            if col not in image_columns and not pd.isna(row[col]):
-                print(f"  {col}: {row[col]}")
+            # Check for image fields
+            for field in item:
+                if "image" in field.lower() or "tile" in field.lower():
+                    print(f"  {field}: {type(item[field]).__name__}")
+                    if isinstance(item[field], str):
+                        if item[field].startswith("data:image"):
+                            print(f"    Data URL format, length: {len(item[field])}")
+                        elif len(item[field]) > 100:
+                            print(f"    Likely base64, length: {len(item[field])}")
+                            try:
+                                img_data = base64.b64decode(
+                                    item[field].split(",")[-1]
+                                    if "," in item[field]
+                                    else item[field]
+                                )
+                                img = Image.open(io.BytesIO(img_data))
+                                print(
+                                    f"    Successfully decoded: {img.format} image, size {img.size}"
+                                )
+                            except Exception as e:
+                                print(f"    Failed to decode: {str(e)}")
 
-        # Check image columns
-        for col in image_columns:
-            if pd.isna(row[col]):
-                print(f"  {col}: None")
-            elif isinstance(row[col], str) and row[col].startswith(
-                ("data:image", "/9j/", "iVBOR")
-            ):
-                print(f"  {col}: Base64 encoded image (length: {len(row[col])})")
-                # Try to decode and verify
-                try:
-                    # Extract base64 content if it's a data URL
-                    base64_content = row[col]
-                    if base64_content.startswith("data:image"):
-                        base64_content = base64_content.split(",", 1)[1]
-
-                    # Decode and check if it's a valid image
-                    img_data = base64.b64decode(base64_content)
-                    img = Image.open(io.BytesIO(img_data))
-                    print(
-                        f"    Successfully decoded: {img.format} image, size {img.size}"
-                    )
-                except Exception as e:
-                    print(f"    Failed to decode: {str(e)}")
-            elif isinstance(row[col], str) and os.path.exists(row[col]):
-                print(f"  {col}: File path (exists: {os.path.exists(row[col])})")
-                try:
-                    img = Image.open(row[col])
-                    print(
-                        f"    Successfully loaded: {img.format} image, size {img.size}"
-                    )
-                except Exception as e:
-                    print(f"    Failed to load: {str(e)}")
-            else:
-                print(
-                    f"  {col}: {type(row[col]).__name__} (length: {len(str(row[col]))})"
-                )
-
-    print(f"\n{'='*50}")
+    print("\n" + "=" * 50)
 
 
 def create_cnn_model(num_classes=2, model_type="resnet50", pretrained=True):
@@ -1084,7 +1189,7 @@ def create_vit_model(
 
 def main(args):
     """
-    Main function to run the horse detection model.
+    Main function.
 
     Args:
         args: Command line arguments
@@ -1092,214 +1197,151 @@ def main(args):
     # Set random seed for reproducibility
     set_seed(args.seed)
 
-    # Set device
-    if torch.cuda.is_available():
-        device = "cuda"
-    elif hasattr(torch, "mps") and torch.backends.mps.is_available():
-        device = "mps"
-    else:
-        device = "cpu"
-
+    # Set up device
+    device = get_device(args.device)
     print(f"Using device: {device}")
 
-    # Download and cache dataset
+    # Set up logging
+    if args.log_file:
+        setup_logging(args.log_file)
+
+    # Download and cache the dataset
     dataset = download_and_cache_dataset(
-        dataset_path=args.dataset_path,
+        dataset_name=args.dataset_name,
         cache_dir=args.cache_dir,
+        force_download=args.force_download,
     )
 
-    # Print dataset info
     print(f"Dataset size: {len(dataset)}")
     if hasattr(dataset, "column_names"):
         print(f"Dataset columns: {dataset.column_names}")
     elif hasattr(dataset, "columns"):
         print(f"Dataset columns: {dataset.columns.tolist()}")
 
-    # Create subset if specified
-    if args.subset_size > 0:
-        print(f"Using subset of {args.subset_size} samples")
-        # Ensure stratified sampling by presence
-        if hasattr(dataset, "value_counts"):
-            presence_counts = dataset["Presence"].value_counts()
-        else:
-            presence_counts = dataset["Presence"].value_counts().to_dict()
-        print(f"Original class distribution: {presence_counts}")
+    # Inspect dataset structure
+    inspect_dataset(dataset, num_samples=3)
 
-        # Calculate stratified sample sizes
-        total_samples = len(dataset)
-        subset_size = min(args.subset_size, total_samples)
+    # Create a subset of the dataset if specified
+    if args.subset_size > 0:
+        print(f"Creating subset of {args.subset_size} samples")
+
+        # Get label distribution before subsetting
+        if isinstance(dataset, pd.DataFrame):
+            label_counts = dataset["Presence"].value_counts().to_dict()
+        else:
+            label_counts = Counter(dataset["Presence"])
+        print(f"Label distribution before subsetting: {label_counts}")
 
         # Create stratified subset
-        if hasattr(dataset, "train_test_split"):
-            dataset = dataset.train_test_split(
-                test_size=subset_size / total_samples,
-                stratify_by_column="Presence",
-                seed=args.seed,
-            )["test"]
-        else:
+        if isinstance(dataset, pd.DataFrame):
             # For pandas DataFrame
             from sklearn.model_selection import train_test_split
 
+            # Get stratification column
+            strat_col = "Presence"
+
+            # Split the dataset
             _, dataset = train_test_split(
                 dataset,
-                test_size=subset_size / total_samples,
-                stratify=dataset["Presence"],
+                test_size=args.subset_size / len(dataset),
+                stratify=dataset[strat_col],
                 random_state=args.seed,
             )
-
-        # Verify stratification
-        if hasattr(dataset, "value_counts"):
-            subset_presence_counts = dataset["Presence"].value_counts()
         else:
-            subset_presence_counts = dataset["Presence"].value_counts().to_dict()
-        print(f"Subset class distribution: {subset_presence_counts}")
-    else:
-        print("Using full dataset")
+            # For Hugging Face datasets
+            dataset = dataset.shuffle(seed=args.seed)
+            dataset = dataset.select(range(args.subset_size))
+
+        # Get label distribution after subsetting
+        if isinstance(dataset, pd.DataFrame):
+            label_counts = dataset["Presence"].value_counts().to_dict()
+        else:
+            label_counts = Counter(dataset["Presence"])
+        print(f"Label distribution after subsetting: {label_counts}")
 
     # Create dataloaders
-    train_loader, test_loader = create_image_dataloaders(
+    train_dataloader, test_dataloader = create_image_dataloaders(
         dataset=dataset,
         batch_size=args.batch_size,
         test_size=args.test_size,
+        num_workers=args.num_workers,
         seed=args.seed,
-        device=device,
+        debug=True,  # Enable debug mode
     )
+
+    print(f"Train dataloader size: {len(train_dataloader.dataset)}")
+    print(f"Test dataloader size: {len(test_dataloader.dataset)}")
 
     # Create model
     if args.model_type == "cnn":
         model = create_cnn_model(
             num_classes=2,
             model_type=args.cnn_model_type,
-            pretrained=True,
+            pretrained=args.pretrained,
         )
     elif args.model_type == "vit":
         model = create_vit_model(
             num_classes=2,
-            model_name=args.vit_model_name,
-            pretrained=True,
+            model_type=args.vit_model_type,
+            pretrained=args.pretrained,
         )
     else:
-        raise ValueError(f"Invalid model type: {args.model_type}")
+        raise ValueError(f"Unknown model type: {args.model_type}")
 
     # Print model summary
     print(f"Model type: {args.model_type}")
     if args.model_type == "cnn":
         print(f"CNN model type: {args.cnn_model_type}")
     elif args.model_type == "vit":
-        print(f"ViT model name: {args.vit_model_name}")
+        print(f"ViT model type: {args.vit_model_type}")
 
     # Count trainable parameters
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Trainable parameters: {trainable_params:,}")
 
+    # Move model to device
+    model = model.to(device)
+
+    # Set up optimizer
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=args.learning_rate,
+        weight_decay=args.weight_decay,
+    )
+
+    # Set up learning rate scheduler
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode="max",
+        factor=0.5,
+        patience=2,
+        verbose=True,
+    )
+
+    # Set up loss function
+    criterion = nn.CrossEntropyLoss()
+
     # Train model
-    print("Training model...")
-    model, history = train_model(
+    history = train_model(
         model=model,
-        train_loader=train_loader,
-        test_loader=test_loader,
-        learning_rate=args.learning_rate,
+        train_dataloader=train_dataloader,
+        test_dataloader=test_dataloader,
+        criterion=criterion,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        device=device,
         num_epochs=args.num_epochs,
         patience=args.patience,
-        device=device,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
     )
 
-    # Save model if specified
+    # Save model
     if args.save_model:
-        model_path = os.path.join(
-            args.models_dir, f"horse_detection_{args.model_type}.pt"
-        )
-        print(f"Saving model to {model_path}")
-        torch.save(model.state_dict(), model_path)
+        save_model(model, args.model_dir, args.model_name)
 
-    # Plot training history if specified
+    # Plot training history
     if args.plot_history:
-        history_path = os.path.join(
-            args.results_dir, f"horse_detection_{args.model_type}_history.png"
-        )
-        print(f"Plotting training history to {history_path}")
-        plot_training_history(history, history_path)
-
-    # Evaluate model on test set
-    print("Evaluating model on test set...")
-    model.eval()
-    test_correct = 0
-    test_total = 0
-
-    # Calculate class distribution in test set
-    test_class_counts = {0: 0, 1: 0}
-    test_class_correct = {0: 0, 1: 0}
-
-    with torch.no_grad():
-        for inputs, targets in tqdm(test_loader, desc="Evaluating"):
-            inputs, targets = inputs.to(device), targets.to(device)
-            outputs = model(inputs)
-            _, predicted = outputs.max(1)
-
-            # Update overall metrics
-            test_total += targets.size(0)
-            test_correct += predicted.eq(targets).sum().item()
-
-            # Update class-specific metrics
-            for i in range(targets.size(0)):
-                label = targets[i].item()
-                test_class_counts[label] += 1
-                if predicted[i].item() == label:
-                    test_class_correct[label] += 1
-
-            # Clean up memory if using MPS
-            if device == "mps":
-                del inputs, targets, outputs
-
-    # Calculate and print metrics
-    test_acc = 100.0 * test_correct / test_total
-    print(f"Test accuracy: {test_acc:.2f}%")
-
-    # Print class-specific metrics
-    for class_idx in test_class_counts:
-        if test_class_counts[class_idx] > 0:
-            class_acc = (
-                100.0 * test_class_correct[class_idx] / test_class_counts[class_idx]
-            )
-            print(
-                f"Class {class_idx} accuracy: {class_acc:.2f}% ({test_class_correct[class_idx]}/{test_class_counts[class_idx]})"
-            )
-
-    # Calculate confusion matrix
-    print("Confusion matrix:")
-    print(
-        f"TN: {test_class_correct[0]}, FP: {test_class_counts[0] - test_class_correct[0]}"
-    )
-    print(
-        f"FN: {test_class_counts[1] - test_class_correct[1]}, TP: {test_class_correct[1]}"
-    )
-
-    # Calculate precision, recall, and F1 score
-    if test_class_correct[1] + (test_class_counts[0] - test_class_correct[0]) > 0:
-        precision = test_class_correct[1] / (
-            test_class_correct[1] + (test_class_counts[0] - test_class_correct[0])
-        )
-    else:
-        precision = 0
-
-    if test_class_correct[1] + (test_class_counts[1] - test_class_correct[1]) > 0:
-        recall = test_class_correct[1] / (
-            test_class_correct[1] + (test_class_counts[1] - test_class_correct[1])
-        )
-    else:
-        recall = 0
-
-    if precision + recall > 0:
-        f1 = 2 * precision * recall / (precision + recall)
-    else:
-        f1 = 0
-
-    print(f"Precision: {precision:.4f}")
-    print(f"Recall: {recall:.4f}")
-    print(f"F1 score: {f1:.4f}")
-
-    return model, history
+        plot_training_history(history, args.figure_dir, args.figure_name)
 
 
 if __name__ == "__main__":
