@@ -68,15 +68,17 @@ class HorseDetectionDataset(Dataset):
         try:
             if "image_base64" in row and pd.notna(row["image_base64"]):
                 img_data = row["image_base64"]
-                # Handle data URL format
-                if img_data.startswith("data:image"):
+                # Handle data URL format - check with string methods instead of startswith
+                if isinstance(img_data, str) and img_data.startswith("data:image"):
                     img_data = img_data.split(",")[1]
                 # Decode base64
                 image = Image.open(io.BytesIO(base64.b64decode(img_data)))
             elif "encoded_tile" in row and pd.notna(row["encoded_tile"]):
                 img_data = row["encoded_tile"]
-                if img_data.startswith("data:image"):
+                # Handle data URL format - check with string methods instead of startswith
+                if isinstance(img_data, str) and img_data.startswith("data:image"):
                     img_data = img_data.split(",")[1]
+                # Decode base64
                 image = Image.open(io.BytesIO(base64.b64decode(img_data)))
             else:
                 # Create a blank image if no image data found
