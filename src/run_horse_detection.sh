@@ -15,12 +15,12 @@ echo "Log will be saved to $LOG_FILE"
 
 # Run the horse detection script with optimized settings for M3 chip
 python src/horse_detection.py \
-  --batch_size 16 \
-  --num_epochs 15 \
-  --patience 5 \
-  --learning_rate 0.0003 \
-  --weight_decay 0.02 \
-  --dropout_rate 0.5 \
+  --batch_size 32 \
+  --num_epochs 20 \
+  --patience 7 \
+  --learning_rate 0.0002 \
+  --weight_decay 0.03 \
+  --dropout_rate 0.6 \
   --subset_size 2000 \
   --save_model \
   --plot_history \
