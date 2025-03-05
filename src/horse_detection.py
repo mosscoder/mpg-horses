@@ -975,6 +975,113 @@ def inspect_dataset(dataset, num_samples=5):
     print(f"\n{'='*50}")
 
 
+def create_cnn_model(num_classes=2, model_type="resnet50", pretrained=True):
+    """
+    Create a CNN model for image classification.
+
+    Args:
+        num_classes (int): Number of output classes
+        model_type (str): Type of CNN model to use
+        pretrained (bool): Whether to use pretrained weights
+
+    Returns:
+        nn.Module: The CNN model
+    """
+    print(f"Creating CNN model: {model_type}")
+
+    if model_type.startswith("resnet"):
+        if model_type == "resnet18":
+            base_model = models.resnet18(
+                weights="IMAGENET1K_V1" if pretrained else None
+            )
+        elif model_type == "resnet34":
+            base_model = models.resnet34(
+                weights="IMAGENET1K_V1" if pretrained else None
+            )
+        elif model_type == "resnet50":
+            base_model = models.resnet50(
+                weights="IMAGENET1K_V1" if pretrained else None
+            )
+        elif model_type == "resnet101":
+            base_model = models.resnet101(
+                weights="IMAGENET1K_V1" if pretrained else None
+            )
+        else:
+            raise ValueError(f"Unsupported ResNet model: {model_type}")
+
+        # Modify the final layer for our classification task
+        in_features = base_model.fc.in_features
+        base_model.fc = nn.Linear(in_features, num_classes)
+
+    elif model_type.startswith("efficientnet"):
+        if model_type == "efficientnet_b0":
+            base_model = models.efficientnet_b0(
+                weights="IMAGENET1K_V1" if pretrained else None
+            )
+        elif model_type == "efficientnet_b1":
+            base_model = models.efficientnet_b1(
+                weights="IMAGENET1K_V1" if pretrained else None
+            )
+        elif model_type == "efficientnet_b2":
+            base_model = models.efficientnet_b2(
+                weights="IMAGENET1K_V1" if pretrained else None
+            )
+        else:
+            raise ValueError(f"Unsupported EfficientNet model: {model_type}")
+
+        # Modify the final layer for our classification task
+        in_features = base_model.classifier[1].in_features
+        base_model.classifier[1] = nn.Linear(in_features, num_classes)
+
+    else:
+        raise ValueError(f"Unsupported model type: {model_type}")
+
+    return base_model
+
+
+def create_vit_model(
+    num_classes=2, model_name="google/vit-base-patch16-224", pretrained=True
+):
+    """
+    Create a Vision Transformer (ViT) model for image classification.
+
+    Args:
+        num_classes (int): Number of output classes
+        model_name (str): Name of the ViT model to use
+        pretrained (bool): Whether to use pretrained weights
+
+    Returns:
+        nn.Module: The ViT model
+    """
+    print(f"Creating ViT model: {model_name}")
+
+    try:
+        from transformers import ViTForImageClassification, ViTConfig
+
+        if pretrained:
+            # Load pretrained model
+            model = ViTForImageClassification.from_pretrained(
+                model_name,
+                num_labels=num_classes,
+                ignore_mismatched_sizes=True,
+            )
+        else:
+            # Create model with random weights
+            config = ViTConfig.from_pretrained(
+                model_name,
+                num_labels=num_classes,
+            )
+            model = ViTForImageClassification(config)
+
+        return model
+
+    except ImportError:
+        print("Error: transformers library not installed. Using CNN model instead.")
+        return create_cnn_model(
+            num_classes=num_classes, model_type="resnet50", pretrained=pretrained
+        )
+
+
 def main(args):
     """
     Main function to run the horse detection model.
