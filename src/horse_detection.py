@@ -33,6 +33,8 @@ import copy
 from sklearn.model_selection import train_test_split
 import zipfile
 from sklearn.metrics import confusion_matrix, classification_report
+import multiprocessing
+import psutil  # For memory monitoring
 
 
 # Set up device
@@ -340,6 +342,28 @@ def create_model(num_classes=2, dropout_rate=0.5):
     return model
 
 
+def get_memory_usage():
+    """
+    Get the current memory usage of the process.
+
+    Returns:
+        tuple: (used_memory_GB, total_memory_GB, percentage_used)
+    """
+    try:
+        process = psutil.Process(os.getpid())
+        used_memory_bytes = process.memory_info().rss  # Resident Set Size
+        used_memory_gb = used_memory_bytes / (1024**3)  # Convert to GB
+
+        # Get system memory info
+        system_memory = psutil.virtual_memory()
+        total_memory_gb = system_memory.total / (1024**3)
+        percentage_used = system_memory.percent
+
+        return used_memory_gb, total_memory_gb, percentage_used
+    except:
+        return None, None, None
+
+
 def train_model(
     model,
     train_loader,
@@ -353,6 +377,7 @@ def train_model(
     class_weights=None,
     save_best=True,
     model_path="models/best_model.pth",
+    monitor_memory=True,  # Add parameter to monitor memory
 ):
     """
     Train the model with early stopping based on validation accuracy.
@@ -370,6 +395,7 @@ def train_model(
         class_weights: Optional tensor of class weights for loss function
         save_best: Whether to save the best model during training
         model_path: Path to save the best model
+        monitor_memory: Whether to monitor memory usage during training
 
     Returns:
         dict: Training history with loss and accuracy metrics
@@ -411,6 +437,14 @@ def train_model(
 
     print("Training model...")
     for epoch in range(num_epochs):
+        # Print memory usage if monitoring is enabled
+        if monitor_memory:
+            used_mem, total_mem, percent_used = get_memory_usage()
+            if used_mem is not None:
+                print(
+                    f"Memory usage: {used_mem:.2f}GB / {total_mem:.2f}GB ({percent_used:.1f}%)"
+                )
+
         # Training phase
         model.train()
         train_loss = 0.0
@@ -662,6 +696,34 @@ def evaluate_model(model, test_loader, device):
     return test_loss, test_accuracy
 
 
+def get_optimal_num_workers():
+    """
+    Determine the optimal number of workers for DataLoader based on system resources.
+
+    For M3 chips, we want to balance between utilizing available cores and avoiding
+    resource contention. A good rule of thumb is to use (num_cpu_cores - 1) or
+    (num_cpu_cores // 2) for better overall system responsiveness.
+
+    Returns:
+        int: Recommended number of workers
+    """
+    try:
+        # Get the number of CPU cores
+        num_cores = multiprocessing.cpu_count()
+
+        # For M3 chips, we'll use a more conservative approach
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            # Use half the cores for M3 to avoid memory contention
+            # but at least 2 workers and at most 6
+            return max(2, min(6, num_cores // 2))
+        else:
+            # For other systems, use num_cores - 1 (standard recommendation)
+            return max(1, num_cores - 1)
+    except:
+        # Default to 4 if we can't determine
+        return 4
+
+
 def main():
     """Main function to run the horse detection model."""
     # Parse arguments
@@ -715,6 +777,12 @@ def main():
         "--use_class_weights",
         action="store_true",
         help="Use class weights to handle imbalanced data",
+    )
+    parser.add_argument(
+        "--num_workers",
+        type=int,
+        default=None,
+        help="Number of worker processes for data loading (default: auto-detect)",
     )
     parser.add_argument(
         "--save_model", action="store_true", help="Save the trained model"
@@ -837,26 +905,33 @@ def main():
             )
 
         # Create data loaders optimized for M3 chip
+        num_workers = (
+            args.num_workers
+            if args.num_workers is not None
+            else get_optimal_num_workers()
+        )
+        print(f"Using {num_workers} workers for data loading")
+
         train_loader = DataLoader(
             train_dataset,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=4,  # Parallel loading
+            num_workers=num_workers,  # Use optimal number of workers
             pin_memory=True,  # Pin memory for faster transfer to GPU
         )
         val_loader = DataLoader(
             val_dataset,
             batch_size=args.batch_size,
             shuffle=False,
-            num_workers=4,
+            num_workers=num_workers,  # Use optimal number of workers
             pin_memory=True,
         )
         test_loader = DataLoader(
             test_dataset,
             batch_size=args.batch_size,
             shuffle=False,
-            num_workers=4,  # Use multiple workers for parallel loading
-            pin_memory=True,  # Faster data transfer to GPU
+            num_workers=num_workers,  # Use optimal number of workers
+            pin_memory=True,
         )
 
         # Create model
@@ -879,6 +954,7 @@ def main():
             class_weights=class_weights,  # Pass class weights to training function
             save_best=args.save_model,
             model_path="models/best_model.pth",
+            monitor_memory=True,  # Pass monitor_memory to training function
         )
 
         # Evaluate model on test set
