@@ -21,6 +21,7 @@ python src/horse_detection.py \
   --learning_rate 0.0002 \
   --weight_decay 0.03 \
   --dropout_rate 0.6 \
+  --grad_clip 1.0 \
   --subset_size 2000 \
   --save_model \
   --plot_history \
