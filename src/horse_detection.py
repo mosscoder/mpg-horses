@@ -31,6 +31,7 @@ from tqdm import tqdm
 from torch.optim import Adam
 import copy
 from sklearn.model_selection import train_test_split
+import zipfile
 
 
 # Set up device
@@ -84,52 +85,137 @@ class HorseDetectionDataset(Dataset):
             # Get the row from the dataframe
             row = self.df.iloc[idx]
 
-            # Try to load the image from the image_base64 field
+            # Try to load the image from the encoded_tile field
             img_data = None
-            if "image_base64" in row and row["image_base64"] is not None:
-                img_data = row["image_base64"]
-
-                # If img_data is binary data, use it directly
-                if isinstance(img_data, bytes):
-                    img = Image.open(io.BytesIO(img_data))
-                # If it's a string (possibly base64 encoded or a data URL)
-                elif isinstance(img_data, str):
-                    # Handle data URL format (data:image/jpeg;base64,...)
-                    if img_data.startswith("data:"):
-                        # Extract the base64 part after the comma
-                        img_data = img_data.split(",", 1)[1]
-
-                    # Decode base64 string to bytes
-                    decoded_data = base64.b64decode(img_data)
-                    img = Image.open(io.BytesIO(decoded_data))
-                else:
-                    raise ValueError(
-                        f"Unsupported image_base64 data type: {type(img_data)}"
-                    )
-
-            # If image_base64 is not available, try encoded_tile
-            elif "encoded_tile" in row and row["encoded_tile"] is not None:
+            if "encoded_tile" in row and row["encoded_tile"] is not None:
                 img_data = row["encoded_tile"]
 
-                # If img_data is binary data, use it directly
-                if isinstance(img_data, bytes):
-                    img = Image.open(io.BytesIO(img_data))
-                # If it's a string (possibly base64 encoded or a data URL)
-                elif isinstance(img_data, str):
-                    # Handle data URL format (data:image/jpeg;base64,...)
-                    if img_data.startswith("data:"):
-                        # Extract the base64 part after the comma
-                        img_data = img_data.split(",", 1)[1]
+                # Handle ZIP file containing NumPy arrays
+                try:
+                    with zipfile.ZipFile(io.BytesIO(img_data), "r") as zip_ref:
+                        if "data.npy" in zip_ref.namelist():
+                            with zip_ref.open("data.npy") as f:
+                                # Load the NumPy array
+                                arr = np.load(f, allow_pickle=True)
 
-                    # Decode base64 string to bytes
-                    decoded_data = base64.b64decode(img_data)
-                    img = Image.open(io.BytesIO(decoded_data))
-                else:
-                    raise ValueError(
-                        f"Unsupported encoded_tile data type: {type(img_data)}"
-                    )
-            else:
-                # If no image data is found, create a blank image
+                                # Convert the array to an image
+                                # The array shape is (4, 390, 390) - RGBA format with channels first
+                                # We need to transpose it to (390, 390, 4) for PIL
+                                if arr.shape[0] == 4 and len(arr.shape) == 3:
+                                    # Transpose from (C, H, W) to (H, W, C)
+                                    arr = np.transpose(arr, (1, 2, 0))
+
+                                    # Convert to RGB if needed
+                                    if arr.shape[2] == 4:  # RGBA
+                                        img = Image.fromarray(arr, "RGBA").convert(
+                                            "RGB"
+                                        )
+                                    else:
+                                        img = Image.fromarray(arr)
+                                else:
+                                    # If shape is unexpected, try to create image directly
+                                    img = Image.fromarray(arr)
+                except Exception as e:
+                    print(f"Error processing ZIP file for item {idx}: {str(e)}")
+                    # Try other methods if ZIP processing fails
+                    img = None
+
+                # If ZIP processing failed, try other methods
+                if img is None:
+                    # If img_data is binary data, try to open directly
+                    if isinstance(img_data, bytes):
+                        try:
+                            img = Image.open(io.BytesIO(img_data))
+                        except Exception:
+                            # If that fails, try to decode as base64
+                            try:
+                                base64_str = img_data.decode("utf-8", errors="ignore")
+                                if base64_str.startswith("data:"):
+                                    base64_str = base64_str.split(",", 1)[1]
+                                decoded_data = base64.b64decode(base64_str)
+                                img = Image.open(io.BytesIO(decoded_data))
+                            except Exception:
+                                img = None
+                    # If it's a string, it's likely base64-encoded
+                    elif isinstance(img_data, str):
+                        try:
+                            if img_data.startswith("data:"):
+                                img_data = img_data.split(",", 1)[1]
+                            decoded_data = base64.b64decode(img_data)
+                            img = Image.open(io.BytesIO(decoded_data))
+                        except Exception:
+                            img = None
+                    else:
+                        img = None
+
+            # If encoded_tile failed, try image_base64
+            if (
+                img is None
+                and "image_base64" in row
+                and row["image_base64"] is not None
+            ):
+                img_data = row["image_base64"]
+
+                # Handle ZIP file containing NumPy arrays
+                try:
+                    with zipfile.ZipFile(io.BytesIO(img_data), "r") as zip_ref:
+                        if "data.npy" in zip_ref.namelist():
+                            with zip_ref.open("data.npy") as f:
+                                # Load the NumPy array
+                                arr = np.load(f, allow_pickle=True)
+
+                                # Convert the array to an image
+                                # The array shape is (4, 390, 390) - RGBA format with channels first
+                                # We need to transpose it to (390, 390, 4) for PIL
+                                if arr.shape[0] == 4 and len(arr.shape) == 3:
+                                    # Transpose from (C, H, W) to (H, W, C)
+                                    arr = np.transpose(arr, (1, 2, 0))
+
+                                    # Convert to RGB if needed
+                                    if arr.shape[2] == 4:  # RGBA
+                                        img = Image.fromarray(arr, "RGBA").convert(
+                                            "RGB"
+                                        )
+                                    else:
+                                        img = Image.fromarray(arr)
+                                else:
+                                    # If shape is unexpected, try to create image directly
+                                    img = Image.fromarray(arr)
+                except Exception as e:
+                    print(f"Error processing ZIP file for item {idx}: {str(e)}")
+                    # Try other methods if ZIP processing fails
+                    img = None
+
+                # If ZIP processing failed, try other methods
+                if img is None:
+                    # If img_data is binary data, try to open directly
+                    if isinstance(img_data, bytes):
+                        try:
+                            img = Image.open(io.BytesIO(img_data))
+                        except Exception:
+                            # If that fails, try to decode as base64
+                            try:
+                                base64_str = img_data.decode("utf-8", errors="ignore")
+                                if base64_str.startswith("data:"):
+                                    base64_str = base64_str.split(",", 1)[1]
+                                decoded_data = base64.b64decode(base64_str)
+                                img = Image.open(io.BytesIO(decoded_data))
+                            except Exception:
+                                img = None
+                    # If it's a string, it's likely base64-encoded
+                    elif isinstance(img_data, str):
+                        try:
+                            if img_data.startswith("data:"):
+                                img_data = img_data.split(",", 1)[1]
+                            decoded_data = base64.b64decode(img_data)
+                            img = Image.open(io.BytesIO(decoded_data))
+                        except Exception:
+                            img = None
+                    else:
+                        img = None
+
+            # If no image was successfully loaded, create a blank image
+            if img is None:
                 img = Image.new("RGB", (224, 224), color="gray")
 
             # Apply transformations if specified
