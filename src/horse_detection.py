@@ -203,10 +203,12 @@ class HorseDetectionDataset(torch.utils.data.Dataset):
             tuple: (image, label)
         """
         # Get the item from the dataset
-        if hasattr(self.dataset, "__getitem__"):
-            item = self.dataset[idx]
-        else:
+        if isinstance(self.dataset, pd.DataFrame):
+            # For pandas DataFrame, use iloc to access by position
             item = self.dataset.iloc[idx]
+        else:
+            # For Hugging Face datasets or other types
+            item = self.dataset[idx]
 
         # Get the label
         if hasattr(item, "get"):
@@ -214,7 +216,7 @@ class HorseDetectionDataset(torch.utils.data.Dataset):
             label = item.get("Presence", item.get("label", 0))
         else:
             # For pandas DataFrames
-            label = item["Presence"] if "Presence" in item else 0
+            label = item["Presence"] if "Presence" in item.index else 0
 
         # Convert label to integer
         if isinstance(label, bool):
@@ -257,7 +259,7 @@ class HorseDetectionDataset(torch.utils.data.Dataset):
                             break
                 else:
                     # For pandas DataFrames
-                    if field in item and item[field] is not None:
+                    if field in item.index and item[field] is not None:
                         image_data = item[field]
                         if isinstance(image_data, str) and image_data.startswith(
                             "data:image"
