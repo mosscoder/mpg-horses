@@ -409,6 +409,11 @@ def train_model(
 
             # Forward pass
             outputs = model(inputs)
+
+            # Reshape outputs and labels for BCEWithLogitsLoss
+            outputs = outputs.view(-1)  # Flatten to [batch_size]
+            labels = labels.float()  # Convert to float for BCEWithLogitsLoss
+
             loss = criterion(outputs, labels)
 
             # Backward pass and optimize
@@ -417,7 +422,7 @@ def train_model(
 
             # Calculate statistics
             train_loss += loss.item() * inputs.size(0)
-            _, predicted = torch.max(outputs, 1)
+            predicted = (outputs > 0).int()  # Threshold at 0 for binary prediction
             train_total += labels.size(0)
             train_correct += (predicted == labels).sum().item()
 
@@ -449,11 +454,16 @@ def train_model(
 
                 # Forward pass
                 outputs = model(inputs)
+
+                # Reshape outputs and labels for BCEWithLogitsLoss
+                outputs = outputs.view(-1)  # Flatten to [batch_size]
+                labels = labels.float()  # Convert to float for BCEWithLogitsLoss
+
                 loss = criterion(outputs, labels)
 
                 # Calculate statistics
                 val_loss += loss.item() * inputs.size(0)
-                _, predicted = torch.max(outputs, 1)
+                predicted = (outputs > 0).int()  # Threshold at 0 for binary prediction
                 val_total += labels.size(0)
                 val_correct += (predicted == labels).sum().item()
 
@@ -561,11 +571,16 @@ def evaluate_model(model, test_loader, device):
 
             # Forward pass
             outputs = model(inputs)
+
+            # Reshape outputs and labels for BCEWithLogitsLoss
+            outputs = outputs.view(-1)  # Flatten to [batch_size]
+            labels = labels.float()  # Convert to float for BCEWithLogitsLoss
+
             loss = criterion(outputs, labels)
 
             # Calculate statistics
             test_loss += loss.item() * inputs.size(0)
-            _, predicted = torch.max(outputs, 1)
+            predicted = (outputs > 0).int()  # Threshold at 0 for binary prediction
             test_total += labels.size(0)
             test_correct += (predicted == labels).sum().item()
 
