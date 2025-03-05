@@ -1009,13 +1009,19 @@ def main(args):
 
     # Print dataset info
     print(f"Dataset size: {len(dataset)}")
-    print(f"Dataset columns: {dataset.column_names}")
+    if hasattr(dataset, "column_names"):
+        print(f"Dataset columns: {dataset.column_names}")
+    elif hasattr(dataset, "columns"):
+        print(f"Dataset columns: {dataset.columns.tolist()}")
 
     # Create subset if specified
     if args.subset_size > 0:
         print(f"Using subset of {args.subset_size} samples")
         # Ensure stratified sampling by presence
-        presence_counts = dataset["Presence"].value_counts()
+        if hasattr(dataset, "value_counts"):
+            presence_counts = dataset["Presence"].value_counts()
+        else:
+            presence_counts = dataset["Presence"].value_counts().to_dict()
         print(f"Original class distribution: {presence_counts}")
 
         # Calculate stratified sample sizes
@@ -1023,14 +1029,28 @@ def main(args):
         subset_size = min(args.subset_size, total_samples)
 
         # Create stratified subset
-        dataset = dataset.train_test_split(
-            test_size=subset_size / total_samples,
-            stratify_by_column="Presence",
-            seed=args.seed,
-        )["test"]
+        if hasattr(dataset, "train_test_split"):
+            dataset = dataset.train_test_split(
+                test_size=subset_size / total_samples,
+                stratify_by_column="Presence",
+                seed=args.seed,
+            )["test"]
+        else:
+            # For pandas DataFrame
+            from sklearn.model_selection import train_test_split
+
+            _, dataset = train_test_split(
+                dataset,
+                test_size=subset_size / total_samples,
+                stratify=dataset["Presence"],
+                random_state=args.seed,
+            )
 
         # Verify stratification
-        subset_presence_counts = dataset["Presence"].value_counts()
+        if hasattr(dataset, "value_counts"):
+            subset_presence_counts = dataset["Presence"].value_counts()
+        else:
+            subset_presence_counts = dataset["Presence"].value_counts().to_dict()
         print(f"Subset class distribution: {subset_presence_counts}")
     else:
         print("Using full dataset")
