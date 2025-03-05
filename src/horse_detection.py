@@ -33,6 +33,7 @@ from torchvision import transforms, models
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 import traceback
+import random
 
 # Import utility modules
 from data_utils import create_dataloaders, get_input_size
@@ -218,33 +219,55 @@ class HorseDetectionDataset(torch.utils.data.Dataset):
 
 def create_image_dataloaders(dataset, batch_size=16, test_size=0.2, random_state=42):
     """
-    Create DataLoader objects for the image dataset.
+    Create data loaders for training and testing.
 
     Args:
-        dataset: The dataset to use (pandas DataFrame or Hugging Face dataset)
-        batch_size (int): Batch size for the DataLoader
-        test_size (float): Proportion of the dataset to use for testing
-        random_state (int): Random seed for reproducibility
+        dataset (pd.DataFrame): The dataset to use
+        batch_size (int): The batch size
+        test_size (float): The proportion of the dataset to use for testing
+        random_state (int): The random state for reproducibility
 
     Returns:
         tuple: (train_loader, test_loader)
     """
-    try:
-        # Convert to pandas DataFrame if it's a Hugging Face dataset
-        if hasattr(dataset, "to_pandas"):
-            print("Converting Hugging Face dataset to pandas DataFrame...")
-            dataset = dataset.to_pandas()
+    # Print dataset info
+    print(f"Dataset type: {type(dataset)}")
+    print(f"Dataset columns: {dataset.columns.tolist()}")
+    print(f"Dataset size: {len(dataset)}")
 
-        # Print dataset information for debugging
-        print(f"Dataset type: {type(dataset)}")
-        if isinstance(dataset, pd.DataFrame):
-            print(f"Dataset columns: {dataset.columns.tolist()}")
-            print(f"Dataset size: {len(dataset)}")
-            if "Presence" in dataset.columns:
-                print(f"Label distribution: {dataset['Presence'].value_counts()}")
+    # Print label distribution
+    print(f"Label distribution: {dataset['Presence'].value_counts()}")
 
-        # Define transformations
-        transform = transforms.Compose(
+    # Split dataset into training and testing sets
+    train_df, test_df = train_test_split(
+        dataset,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=dataset["Presence"],
+    )
+
+    print(f"Training set size: {len(train_df)}")
+    print(f"Testing set size: {len(test_df)}")
+
+    # Create datasets
+    train_dataset = HorseDetectionDataset(
+        train_df,
+        transform=transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomRotation(10),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        ),
+    )
+
+    test_dataset = HorseDetectionDataset(
+        test_df,
+        transform=transforms.Compose(
             [
                 transforms.Resize((224, 224)),
                 transforms.ToTensor(),
@@ -252,37 +275,36 @@ def create_image_dataloaders(dataset, batch_size=16, test_size=0.2, random_state
                     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
                 ),
             ]
-        )
+        ),
+    )
 
-        # Split the dataset into training and testing sets
-        train_df, test_df = train_test_split(
-            dataset,
-            test_size=test_size,
-            random_state=random_state,
-            stratify=dataset["Presence"] if "Presence" in dataset.columns else None,
-        )
+    # Determine number of workers based on device
+    # When using MPS (Apple Silicon), set num_workers=0 to avoid multiprocessing issues
+    if hasattr(torch, "mps") and torch.backends.mps.is_available():
+        num_workers = 0
+        print("Using MPS device: setting num_workers=0 to avoid multiprocessing issues")
+    else:
+        num_workers = min(os.cpu_count(), 4)
+        print(f"Using num_workers={num_workers} for data loading")
 
-        print(f"Training set size: {len(train_df)}")
-        print(f"Testing set size: {len(test_df)}")
+    # Create data loaders
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True,
+    )
 
-        # Create datasets
-        train_dataset = HorseDetectionDataset(train_df, transform=transform, debug=True)
-        test_dataset = HorseDetectionDataset(test_df, transform=transform, debug=True)
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+    )
 
-        # Create data loaders
-        train_loader = DataLoader(
-            train_dataset, batch_size=batch_size, shuffle=True, num_workers=4
-        )
-        test_loader = DataLoader(
-            test_dataset, batch_size=batch_size, shuffle=False, num_workers=4
-        )
-
-        return train_loader, test_loader
-
-    except Exception as e:
-        print(f"Error creating data loaders: {str(e)}")
-        traceback.print_exc()
-        raise
+    return train_loader, test_loader
 
 
 def train_model(
@@ -292,27 +314,32 @@ def train_model(
     learning_rate=0.0001,
     num_epochs=30,
     patience=5,
-    device="cuda",
+    device=None,
 ):
     """
     Train a model on the given data loaders.
 
     Args:
         model (nn.Module): The model to train
-        train_loader (DataLoader): DataLoader for training data
-        test_loader (DataLoader): DataLoader for testing data
-        learning_rate (float): Learning rate for the optimizer
-        num_epochs (int): Number of epochs to train for
-        patience (int): Number of epochs to wait for improvement before early stopping
-        device (str): Device to train on ('cuda' or 'cpu')
+        train_loader (DataLoader): The training data loader
+        test_loader (DataLoader): The testing data loader
+        learning_rate (float): The learning rate
+        num_epochs (int): The number of epochs to train for
+        patience (int): The number of epochs to wait for improvement before early stopping
+        device (str): The device to train on (cuda, mps, or cpu)
 
     Returns:
         tuple: (model, history) where history is a dictionary of training metrics
     """
-    # Move model to device
-    device = torch.device(
-        device if torch.cuda.is_available() and device == "cuda" else "cpu"
-    )
+    # Set device
+    if device is None:
+        if torch.cuda.is_available():
+            device = "cuda"
+        elif hasattr(torch, "mps") and torch.backends.mps.is_available():
+            device = "mps"
+        else:
+            device = "cpu"
+
     print(f"Using device: {device}")
     model = model.to(device)
 
@@ -426,7 +453,7 @@ def train_model(
                 print(f"Early stopping at epoch {epoch+1}")
                 break
 
-    # Load the best model state
+    # Load the best model weights
     if best_model_state is not None:
         model.load_state_dict(best_model_state)
 
@@ -499,7 +526,7 @@ def parse_args():
     parser.add_argument(
         "--cache_dir",
         type=str,
-        default="../data/cached_datasets",
+        default="data/cached_datasets",
         help="Directory to cache the dataset",
     )
 
@@ -524,7 +551,7 @@ def parse_args():
         "--patience", type=int, default=5, help="Patience for early stopping"
     )
     parser.add_argument(
-        "--seed", type=int, default=42, help="Random seed for reproducibility"
+        "--random_seed", type=int, default=42, help="Random seed for reproducibility"
     )
     parser.add_argument(
         "--device",
@@ -537,24 +564,28 @@ def parse_args():
     parser.add_argument(
         "--results_dir",
         type=str,
-        default="../results/figures",
+        default="results/figures",
         help="Directory to save results",
     )
     parser.add_argument(
-        "--models_dir", type=str, default="../models", help="Directory to save models"
+        "--models_dir", type=str, default="models", help="Directory to save models"
     )
     parser.add_argument(
-        "--save_model", action="store_true", help="Whether to save the trained model"
+        "--save_model",
+        action="store_true",
+        help="Whether to save the trained model",
     )
     parser.add_argument(
-        "--plot_history", action="store_true", help="Whether to plot training history"
+        "--plot_history",
+        action="store_true",
+        help="Whether to plot the training history",
     )
 
     return parser.parse_args()
 
 
 def download_and_cache_dataset(
-    dataset_path, use_auth=False, cache_dir="../data/cached_datasets"
+    dataset_path, use_auth=False, cache_dir="data/cached_datasets"
 ):
     """
     Download a dataset from Hugging Face and cache it locally.
@@ -657,12 +688,24 @@ def main():
     """
     Main function to run the horse detection model.
     """
-    # Parse command line arguments
     args = parse_args()
 
     # Set random seed for reproducibility
-    set_seed(args.seed)
-    print(f"Random seed set to {args.seed}")
+    random.seed(args.random_seed)
+    np.random.seed(args.random_seed)
+    torch.manual_seed(args.random_seed)
+    print(f"Random seed set to {args.random_seed}")
+
+    # Set device
+    if torch.cuda.is_available():
+        device = "cuda"
+        torch.cuda.manual_seed_all(args.random_seed)
+    elif hasattr(torch, "mps") and torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
+
+    print(f"Using device: {device}")
 
     # Create directories for results and models if they don't exist
     os.makedirs(args.results_dir, exist_ok=True)
@@ -684,7 +727,10 @@ def main():
         # Create data loaders
         print("Creating data loaders")
         train_loader, test_loader = create_image_dataloaders(
-            dataset, batch_size=args.batch_size, test_size=0.2, random_state=args.seed
+            dataset,
+            batch_size=args.batch_size,
+            test_size=0.2,
+            random_state=args.random_seed,
         )
 
         # Create model
@@ -694,8 +740,7 @@ def main():
         else:
             raise ValueError(f"Unknown model type: {args.model_type}")
 
-        # Train model
-        print("Training model")
+        # Train the model
         model, history = train_model(
             model,
             train_loader,
@@ -703,7 +748,7 @@ def main():
             learning_rate=args.learning_rate,
             num_epochs=args.num_epochs,
             patience=args.patience,
-            device=args.device,
+            device=device,
         )
 
         # Save model if requested
