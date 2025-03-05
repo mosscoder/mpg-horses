@@ -121,136 +121,180 @@ class ViTModel(nn.Module):
 # Custom dataset class for horse detection
 class HorseDetectionDataset(torch.utils.data.Dataset):
     """
-    Dataset for horse detection from aerial imagery.
+    Dataset for horse detection.
     """
 
-    def __init__(self, data, transform=None, debug=False):
+    def __init__(self, dataset, transform=None, debug=False):
         """
         Initialize the dataset.
 
         Args:
-            data (pd.DataFrame): The dataset
-            transform (callable, optional): Optional transform to be applied on a sample
+            dataset: The dataset to use (pandas DataFrame or Hugging Face dataset)
+            transform: Optional transform to be applied to the images
             debug (bool): Whether to print debug information
         """
-        self.data = data
-        self.transform = transform
+        self.dataset = dataset
         self.debug = debug
-        self.total_count = 0
-        self.error_count = 0
 
-        # Create a default image (black square)
-        self.default_image = np.zeros((224, 224, 3), dtype=np.uint8)
+        # Set up transforms
+        if transform is None:
+            # Default transforms for training
+            self.transform = transforms.Compose(
+                [
+                    transforms.Resize((256, 256)),  # Resize to larger size for cropping
+                    transforms.RandomCrop(224),  # Random crop for more variation
+                    transforms.RandomHorizontalFlip(p=0.5),
+                    transforms.RandomVerticalFlip(p=0.3),  # Add vertical flips
+                    transforms.RandomRotation(15),  # Increase rotation range
+                    transforms.ColorJitter(
+                        brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1
+                    ),  # Add color jitter
+                    transforms.RandomAffine(
+                        degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)
+                    ),  # Add affine transformations
+                    transforms.ToTensor(),
+                    transforms.Normalize(
+                        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                    ),
+                    transforms.RandomErasing(
+                        p=0.2
+                    ),  # Add random erasing for robustness
+                ]
+            )
+        else:
+            self.transform = transform
 
-        # Add a text label to the default image
-        if debug:
-            print(f"Initialized dataset with {len(data)} samples")
+        # Set up test transforms
+        self.test_transform = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
+
+        # Print dataset info if debug is enabled
+        if self.debug:
+            if hasattr(dataset, "column_names"):
+                print(f"Dataset columns: {dataset.column_names}")
+            elif hasattr(dataset, "columns"):
+                print(f"Dataset columns: {dataset.columns.tolist()}")
+            print(f"Dataset size: {len(dataset)}")
 
     def __len__(self):
-        return len(self.data)
+        """
+        Get the length of the dataset.
+
+        Returns:
+            int: The length of the dataset
+        """
+        return len(self.dataset)
 
     def __getitem__(self, idx):
         """
         Get an item from the dataset.
 
         Args:
-            idx (int): Index of the item to get
+            idx (int): The index of the item to get
 
         Returns:
             tuple: (image, label)
         """
-        self.total_count += 1
+        # Get the item from the dataset
+        if hasattr(self.dataset, "__getitem__"):
+            item = self.dataset[idx]
+        else:
+            item = self.dataset.iloc[idx]
 
+        # Get the label
+        if hasattr(item, "get"):
+            # For Hugging Face datasets
+            label = item.get("Presence", item.get("label", 0))
+        else:
+            # For pandas DataFrames
+            label = item["Presence"] if "Presence" in item else 0
+
+        # Convert label to integer
+        if isinstance(label, bool):
+            label = 1 if label else 0
+        elif isinstance(label, str):
+            label = 1 if label.lower() in ["true", "yes", "1"] else 0
+        else:
+            label = int(label)
+
+        # Get the image
         try:
-            # Get the row from the dataframe
-            row = self.data.iloc[idx]
-
-            # Get the label (Presence column)
-            label = int(row["Presence"])
-
-            # Try to get the image from base64 encoding first
+            # Try to get the image from various possible fields
             image = None
-            error_message = ""
 
-            # Try to load from encoded_tile first (most likely to contain the image)
-            if "encoded_tile" in row and pd.notna(row["encoded_tile"]):
-                try:
-                    # Decode base64 image
-                    base64_content = row["encoded_tile"]
-                    if base64_content.startswith("data:image"):
-                        base64_content = base64_content.split(",", 1)[1]
+            # Check for base64 encoded image
+            for field in ["image_base64", "encoded_tile", "image"]:
+                if hasattr(item, "get"):
+                    # For Hugging Face datasets
+                    if field in item:
+                        image_data = item[field]
+                        if isinstance(image_data, str) and image_data.startswith(
+                            "data:image"
+                        ):
+                            # Handle data URL format
+                            image_data = image_data.split(",")[1]
 
-                    img_data = base64.b64decode(base64_content)
-                    image = Image.open(io.BytesIO(img_data))
+                        if isinstance(image_data, str):
+                            try:
+                                image = Image.open(
+                                    io.BytesIO(base64.b64decode(image_data))
+                                )
+                                break
+                            except Exception as e:
+                                if self.debug:
+                                    print(f"Error decoding base64 image: {str(e)}")
+                                continue
+                        elif hasattr(image_data, "convert_to_pil"):
+                            # For Hugging Face image type
+                            image = image_data.convert_to_pil()
+                            break
+                else:
+                    # For pandas DataFrames
+                    if field in item and item[field] is not None:
+                        image_data = item[field]
+                        if isinstance(image_data, str) and image_data.startswith(
+                            "data:image"
+                        ):
+                            # Handle data URL format
+                            image_data = image_data.split(",")[1]
 
-                    # Convert to RGB if needed
-                    if image.mode != "RGB":
-                        image = image.convert("RGB")
-                except Exception as e:
-                    error_message += f"encoded_tile decode error: {str(e)}. "
+                        if isinstance(image_data, str):
+                            try:
+                                image = Image.open(
+                                    io.BytesIO(base64.b64decode(image_data))
+                                )
+                                break
+                            except Exception as e:
+                                if self.debug:
+                                    print(f"Error decoding base64 image: {str(e)}")
+                                continue
 
-            # Try image_base64 next
-            if (
-                image is None
-                and "image_base64" in row
-                and pd.notna(row["image_base64"])
-            ):
-                try:
-                    # Decode base64 image
-                    base64_content = row["image_base64"]
-                    if base64_content.startswith("data:image"):
-                        base64_content = base64_content.split(",", 1)[1]
-
-                    img_data = base64.b64decode(base64_content)
-                    image = Image.open(io.BytesIO(img_data))
-
-                    # Convert to RGB if needed
-                    if image.mode != "RGB":
-                        image = image.convert("RGB")
-                except Exception as e:
-                    error_message += f"image_base64 decode error: {str(e)}. "
-
-            # If base64 failed, try to load from file path
-            if image is None and "tile_path" in row and pd.notna(row["tile_path"]):
-                try:
-                    # Try to load from file path
-                    image_path = row["tile_path"]
-                    if os.path.exists(image_path):
-                        image = Image.open(image_path)
-
-                        # Convert to RGB if needed
-                        if image.mode != "RGB":
-                            image = image.convert("RGB")
-                    else:
-                        error_message += f"File not found: {image_path}. "
-                except Exception as e:
-                    error_message += f"File load error: {str(e)}. "
-
-            # If both methods failed, create a default image
+            # If no image found, create a blank image
             if image is None:
                 if self.debug:
-                    print(f"Error loading image at index {idx}: {error_message}")
+                    print(f"No image found for item {idx}, creating blank image")
+                image = Image.new("RGB", (224, 224), color="gray")
 
-                # Create a default image (black square with label text)
-                image = Image.fromarray(self.default_image)
-
-            # Apply transformations if specified
-            if self.transform:
+            # Apply transforms
+            if self.transform is not None:
                 image = self.transform(image)
 
             return image, label
 
         except Exception as e:
             if self.debug:
-                print(f"Unexpected error at index {idx}: {str(e)}")
+                print(f"Error processing item {idx}: {str(e)}")
 
-            # Return a default image and label
-            default_image = Image.fromarray(self.default_image)
-            if self.transform:
-                default_image = self.transform(default_image)
-
-            # Use 0 as default label (assuming binary classification)
-            return default_image, 0
+            # Return a blank image and the label
+            blank_image = torch.zeros(3, 224, 224)
+            return blank_image, label
 
 
 def create_image_dataloaders(
