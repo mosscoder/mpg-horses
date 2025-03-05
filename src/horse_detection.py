@@ -32,6 +32,7 @@ from torch.optim import Adam
 import copy
 from sklearn.model_selection import train_test_split
 import zipfile
+from sklearn.metrics import confusion_matrix, classification_report
 
 
 # Set up device
@@ -313,22 +314,34 @@ def inspect_dataset(dataset, num_samples=3):
     print("\n===== END OF INSPECTION =====\n")
 
 
-def create_model(num_classes=2):
-    """Create a ResNet50 model for classification."""
+def create_model(num_classes=2, dropout_rate=0.5):
+    """Create a ResNet50 model for classification with regularization to prevent overfitting."""
     model = models.resnet50(weights="DEFAULT")
 
     # Freeze early layers
     for param in list(model.parameters())[:-20]:
         param.requires_grad = False
 
-    # Replace the final fully connected layer
+    # Replace the final fully connected layer with dropout for regularization
     num_features = model.fc.in_features
-    model.fc = nn.Linear(num_features, num_classes)
+    model.fc = nn.Sequential(
+        nn.Dropout(dropout_rate),  # Add dropout with specified probability
+        nn.Linear(num_features, num_classes),
+    )
 
     return model
 
 
-def train_model(model, train_loader, val_loader, device, num_epochs=10, patience=3):
+def train_model(
+    model,
+    train_loader,
+    val_loader,
+    device,
+    num_epochs=10,
+    patience=3,
+    learning_rate=0.0005,
+    weight_decay=0.01,
+):
     """
     Train the model with early stopping based on validation accuracy.
 
@@ -339,6 +352,8 @@ def train_model(model, train_loader, val_loader, device, num_epochs=10, patience
         device: Device to train on ('cuda', 'mps', or 'cpu')
         num_epochs: Maximum number of epochs to train
         patience: Number of epochs to wait for improvement before stopping
+        learning_rate: Learning rate for optimizer
+        weight_decay: Weight decay (L2 regularization) for optimizer
 
     Returns:
         dict: Training history with loss and accuracy metrics
@@ -348,7 +363,14 @@ def train_model(model, train_loader, val_loader, device, num_epochs=10, patience
 
     # Define loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = Adam(model.parameters(), lr=0.001)
+    optimizer = Adam(
+        model.parameters(), lr=learning_rate, weight_decay=weight_decay
+    )  # Add L2 regularization with weight decay
+
+    # Learning rate scheduler to reduce LR when validation loss plateaus
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", factor=0.5, patience=2, verbose=True
+    )
 
     # Initialize variables for early stopping
     best_val_acc = 0.0
@@ -434,6 +456,9 @@ def train_model(model, train_loader, val_loader, device, num_epochs=10, patience
         epoch_val_loss = val_loss / len(val_loader.dataset)
         epoch_val_acc = 100 * val_correct / val_total
 
+        # Update learning rate scheduler
+        scheduler.step(epoch_val_loss)
+
         # Print epoch statistics
         print(f"Epoch {epoch+1}/{num_epochs}")
         print(f"Train Loss: {epoch_train_loss:.4f}, Train Acc: {epoch_train_acc:.2f}%")
@@ -495,6 +520,69 @@ def plot_history(history, save_path=None):
     plt.show()
 
 
+def evaluate_model(model, test_loader, device):
+    """
+    Evaluate the model on the test set.
+
+    Args:
+        model: The trained model
+        test_loader: DataLoader for test data
+        device: Device to evaluate on ('cuda', 'mps', or 'cpu')
+
+    Returns:
+        tuple: (test_loss, test_accuracy)
+    """
+    model.eval()
+    test_loss = 0.0
+    test_correct = 0
+    test_total = 0
+
+    # Define loss function
+    criterion = nn.CrossEntropyLoss()
+
+    # Create confusion matrix
+    all_preds = []
+    all_labels = []
+
+    with torch.no_grad():
+        for inputs, labels in tqdm(test_loader, desc="Evaluating on test set"):
+            # Move data to device
+            inputs, labels = inputs.to(device), labels.to(device)
+
+            # Forward pass
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+
+            # Calculate statistics
+            test_loss += loss.item() * inputs.size(0)
+            _, predicted = torch.max(outputs, 1)
+            test_total += labels.size(0)
+            test_correct += (predicted == labels).sum().item()
+
+            # Store predictions and labels for confusion matrix
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    # Calculate final statistics
+    test_loss = test_loss / len(test_loader.dataset)
+    test_accuracy = 100 * test_correct / test_total
+
+    print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.2f}%")
+
+    # Print confusion matrix
+    cm = confusion_matrix(all_labels, all_preds)
+    print("\nConfusion Matrix:")
+    print(cm)
+
+    # Print classification report
+    print("\nClassification Report:")
+    print(
+        classification_report(all_labels, all_preds, target_names=["No Horse", "Horse"])
+    )
+
+    return test_loss, test_accuracy
+
+
 def main():
     """Main function to run the horse detection model."""
     # Parse arguments
@@ -519,6 +607,24 @@ def main():
         type=float,
         default=0.2,
         help="Proportion of data to use for testing",
+    )
+    parser.add_argument(
+        "--learning_rate",
+        type=float,
+        default=0.0005,
+        help="Learning rate for optimizer",
+    )
+    parser.add_argument(
+        "--weight_decay",
+        type=float,
+        default=0.01,
+        help="Weight decay (L2 regularization) for optimizer",
+    )
+    parser.add_argument(
+        "--dropout_rate",
+        type=float,
+        default=0.5,
+        help="Dropout rate for regularization",
     )
     parser.add_argument(
         "--save_model", action="store_true", help="Save the trained model"
@@ -566,7 +672,31 @@ def main():
             print(f"Subset label distribution: {dict(df['Presence'].value_counts())}")
 
         # Define transforms for training and validation
-        transform = transforms.Compose(
+        train_transform = transforms.Compose(
+            [
+                transforms.Resize(
+                    (256, 256)
+                ),  # Resize larger than final size for random cropping
+                transforms.RandomResizedCrop(
+                    224, scale=(0.8, 1.0)
+                ),  # Random crop with zoom
+                transforms.RandomHorizontalFlip(
+                    p=0.5
+                ),  # Horizontal flip with 50% probability
+                transforms.RandomVerticalFlip(
+                    p=0.5
+                ),  # Vertical flip with 50% probability
+                transforms.ColorJitter(
+                    brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1
+                ),  # Color jittering
+                transforms.RandomRotation(15),  # Random rotation up to 15 degrees
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            ]
+        )
+
+        # Validation transform without augmentation
+        val_transform = transforms.Compose(
             [
                 transforms.Resize((224, 224)),
                 transforms.ToTensor(),
@@ -579,11 +709,18 @@ def main():
             df, test_size=args.test_size, stratify=df["Presence"], random_state=42
         )
 
+        # Further split train into train and validation
+        train_df, val_df = train_test_split(
+            train_df, test_size=0.15, stratify=train_df["Presence"], random_state=42
+        )
+
         # Create datasets
-        train_dataset = HorseDetectionDataset(train_df, transform=transform)
-        test_dataset = HorseDetectionDataset(test_df, transform=transform)
+        train_dataset = HorseDetectionDataset(train_df, transform=train_transform)
+        val_dataset = HorseDetectionDataset(val_df, transform=val_transform)
+        test_dataset = HorseDetectionDataset(test_df, transform=val_transform)
 
         print(f"Train dataset size: {len(train_dataset)}")
+        print(f"Validation dataset size: {len(val_dataset)}")
         print(f"Test dataset size: {len(test_dataset)}")
 
         # Create data loaders with optimized settings for M3 chip
@@ -594,6 +731,13 @@ def main():
             num_workers=4,  # Use multiple workers for parallel loading
             pin_memory=True,  # Faster data transfer to GPU
         )
+        val_loader = DataLoader(
+            val_dataset,
+            batch_size=args.batch_size,
+            shuffle=False,
+            num_workers=4,
+            pin_memory=True,
+        )
         test_loader = DataLoader(
             test_dataset,
             batch_size=args.batch_size,
@@ -603,7 +747,7 @@ def main():
         )
 
         # Create model
-        model = create_model(num_classes=2)
+        model = create_model(num_classes=2, dropout_rate=args.dropout_rate)
         print(
             f"Model created with {sum(p.numel() for p in model.parameters() if p.requires_grad):,} trainable parameters"
         )
@@ -612,11 +756,18 @@ def main():
         history = train_model(
             model,
             train_loader,
-            test_loader,
+            val_loader,  # Use validation loader instead of test loader
             device=get_device(),
             num_epochs=args.num_epochs,
             patience=args.patience,
+            learning_rate=args.learning_rate,
+            weight_decay=args.weight_decay,
         )
+
+        # Evaluate model on test set
+        print("\nEvaluating model on test set...")
+        device = get_device()
+        test_loss, test_accuracy = evaluate_model(model, test_loader, device)
 
         # Save model if specified
         if args.save_model:
