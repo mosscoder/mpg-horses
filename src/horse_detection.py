@@ -1058,6 +1058,9 @@ def main():
             # Combine the samples
             df = pd.concat([df_horses_sample, df_no_horses_sample])
 
+            # Reset the index to avoid out-of-bounds errors when accessing with iloc
+            df = df.reset_index(drop=True)
+
             print(f"Subset size: {len(df)}")
             print(f"Subset label distribution: {dict(df['Presence'].value_counts())}")
 
