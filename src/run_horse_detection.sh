@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Create directories for models and results
-mkdir -p ../models
-mkdir -p ../results/figures
-mkdir -p ../data/cached_datasets
+mkdir -p models
+mkdir -p results/figures
+mkdir -p data/cached_datasets
 
 # Set the dataset path
 DATASET_PATH="mpg-ranch/horse-detection"
-CACHE_FILE="../data/cached_datasets/${DATASET_PATH/\//_}.parquet"
+CACHE_FILE="data/cached_datasets/${DATASET_PATH/\//_}.parquet"
 
 # Check if cached dataset exists
 if [ -f "$CACHE_FILE" ]; then
@@ -36,8 +36,8 @@ python src/horse_detection.py \
     --learning_rate 0.0001 \
     --num_epochs 30 \
     --patience 5 \
-    --cache_dir "../data/cached_datasets" \
+    --cache_dir "data/cached_datasets" \
     --save_model \
     --plot_history
 
-echo "Horse detection model training completed. Check results in ../results/figures/" 
+echo "Horse detection model training completed. Check results in results/figures/" 
