@@ -349,6 +349,7 @@ def train_model(
     patience=3,
     learning_rate=0.0005,
     weight_decay=0.01,
+    grad_clip=1.0,
 ):
     """
     Train the model with early stopping based on validation accuracy.
@@ -362,6 +363,7 @@ def train_model(
         patience: Number of epochs to wait for improvement before stopping
         learning_rate: Learning rate for optimizer
         weight_decay: Weight decay (L2 regularization) for optimizer
+        grad_clip: Maximum norm of gradients for clipping
 
     Returns:
         dict: Training history with loss and accuracy metrics
@@ -418,6 +420,10 @@ def train_model(
 
             # Backward pass and optimize
             loss.backward()
+
+            # Apply gradient clipping to prevent exploding gradients
+            torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+
             optimizer.step()
 
             # Calculate statistics
@@ -801,6 +807,7 @@ def main():
             patience=args.patience,
             learning_rate=args.learning_rate,
             weight_decay=args.weight_decay,
+            grad_clip=1.0,
         )
 
         # Evaluate model on test set
