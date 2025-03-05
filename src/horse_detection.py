@@ -27,6 +27,8 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms, models
 from tqdm import tqdm
+from torch.optim import Adam
+import copy
 
 # Set up device
 device = torch.device(
@@ -211,34 +213,47 @@ def create_model(num_classes=2):
     return model
 
 
-def train_model(model, train_loader, val_loader, num_epochs=10, patience=3):
-    """Train the model."""
+def train_model(model, train_loader, val_loader, device, num_epochs=10, patience=3):
+    """
+    Train the model with early stopping based on validation accuracy.
+
+    Args:
+        model: The model to train
+        train_loader: DataLoader for training data
+        val_loader: DataLoader for validation data
+        device: Device to train on ('cuda', 'mps', or 'cpu')
+        num_epochs: Maximum number of epochs to train
+        patience: Number of epochs to wait for improvement before stopping
+
+    Returns:
+        dict: Training history with loss and accuracy metrics
+    """
     # Move model to device
     model = model.to(device)
 
-    # Set up loss function and optimizer
+    # Define loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    optimizer = Adam(model.parameters(), lr=0.001)
 
-    # Initialize variables for training
+    # Initialize variables for early stopping
     best_val_acc = 0.0
-    best_model_weights = model.state_dict().copy()
-    patience_counter = 0
+    epochs_no_improve = 0
 
-    # Training history
+    # Initialize history dictionary
     history = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
 
-    # Training loop
+    print("Training model...")
     for epoch in range(num_epochs):
-        print(f"Epoch {epoch+1}/{num_epochs}")
-
         # Training phase
         model.train()
         train_loss = 0.0
         train_correct = 0
         train_total = 0
 
-        for inputs, labels in tqdm(train_loader, desc="Training"):
+        # Create progress bar for training
+        train_pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}\nTraining")
+
+        for inputs, labels in train_pbar:
             # Move data to device
             inputs, labels = inputs.to(device), labels.to(device)
 
@@ -253,19 +268,23 @@ def train_model(model, train_loader, val_loader, num_epochs=10, patience=3):
             loss.backward()
             optimizer.step()
 
-            # Update statistics
+            # Calculate statistics
             train_loss += loss.item() * inputs.size(0)
             _, predicted = torch.max(outputs, 1)
             train_total += labels.size(0)
             train_correct += (predicted == labels).sum().item()
 
-            # Clean up memory if using MPS
-            if device.type == "mps":
-                torch.mps.empty_cache()
+            # Update progress bar
+            train_pbar.set_postfix(
+                {
+                    "loss": train_loss / train_total,
+                    "acc": 100 * train_correct / train_total,
+                }
+            )
 
         # Calculate epoch statistics
-        epoch_train_loss = train_loss / train_total
-        epoch_train_acc = 100.0 * train_correct / train_total
+        epoch_train_loss = train_loss / len(train_loader.dataset)
+        epoch_train_acc = 100 * train_correct / train_total
 
         # Validation phase
         model.eval()
@@ -273,8 +292,11 @@ def train_model(model, train_loader, val_loader, num_epochs=10, patience=3):
         val_correct = 0
         val_total = 0
 
+        # Create progress bar for validation
+        val_pbar = tqdm(val_loader, desc="Validation")
+
         with torch.no_grad():
-            for inputs, labels in tqdm(val_loader, desc="Validation"):
+            for inputs, labels in val_pbar:
                 # Move data to device
                 inputs, labels = inputs.to(device), labels.to(device)
 
@@ -282,21 +304,23 @@ def train_model(model, train_loader, val_loader, num_epochs=10, patience=3):
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
 
-                # Update statistics
+                # Calculate statistics
                 val_loss += loss.item() * inputs.size(0)
                 _, predicted = torch.max(outputs, 1)
                 val_total += labels.size(0)
                 val_correct += (predicted == labels).sum().item()
 
-                # Clean up memory if using MPS
-                if device.type == "mps":
-                    torch.mps.empty_cache()
+                # Update progress bar
+                val_pbar.set_postfix(
+                    {"loss": val_loss / val_total, "acc": 100 * val_correct / val_total}
+                )
 
         # Calculate epoch statistics
-        epoch_val_loss = val_loss / val_total
-        epoch_val_acc = 100.0 * val_correct / val_total
+        epoch_val_loss = val_loss / len(val_loader.dataset)
+        epoch_val_acc = 100 * val_correct / val_total
 
         # Print epoch statistics
+        print(f"Epoch {epoch+1}/{num_epochs}")
         print(f"Train Loss: {epoch_train_loss:.4f}, Train Acc: {epoch_train_acc:.2f}%")
         print(f"Val Loss: {epoch_val_loss:.4f}, Val Acc: {epoch_val_acc:.2f}%")
 
@@ -306,25 +330,22 @@ def train_model(model, train_loader, val_loader, num_epochs=10, patience=3):
         history["val_loss"].append(epoch_val_loss)
         history["val_acc"].append(epoch_val_acc)
 
-        # Check if this is the best model
+        # Check for early stopping
         if epoch_val_acc > best_val_acc:
             best_val_acc = epoch_val_acc
-            best_model_weights = model.state_dict().copy()
-            patience_counter = 0
+            epochs_no_improve = 0
+            # Save the best model weights
+            best_model_weights = copy.deepcopy(model.state_dict())
         else:
-            patience_counter += 1
-
-        # Early stopping
-        if patience_counter >= patience:
-            print(f"Early stopping at epoch {epoch+1}")
-            break
-
-        print("-" * 50)
+            epochs_no_improve += 1
+            if epochs_no_improve >= patience:
+                print(f"Early stopping triggered after {epoch+1} epochs")
+                break
 
     # Load best model weights
     model.load_state_dict(best_model_weights)
 
-    return model, history
+    return history
 
 
 def plot_history(history, save_path=None):
@@ -465,7 +486,6 @@ def main():
         )
 
         # Train model
-        device = get_device()
         history = train_model(
             model,
             train_loader,
