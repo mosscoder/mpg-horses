@@ -80,133 +80,124 @@ class HorseDetectionDataset(torch.utils.data.Dataset):
     """
 
     def __init__(self, data, transform=None, debug=False):
+        """
+        Initialize the dataset.
+
+        Args:
+            data (pd.DataFrame): The dataset
+            transform (callable, optional): Optional transform to be applied on a sample
+            debug (bool): Whether to print debug information
+        """
         self.data = data
         self.transform = transform
-        self.error_count = 0
+        self.debug = debug
         self.total_count = 0
-        # Create a default image to use when loading fails
-        self.default_image = np.ones((224, 224, 3), dtype=np.uint8) * 128  # Gray image
-        # Print dataset column names for debugging
-        if hasattr(data, "column_names"):
-            print(f"Dataset columns: {data.column_names}")
+        self.error_count = 0
+
+        # Create a default image (black square)
+        self.default_image = np.zeros((224, 224, 3), dtype=np.uint8)
+
+        # Add a text label to the default image
+        if debug:
+            print(f"Initialized dataset with {len(data)} samples")
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
+        """
+        Get an item from the dataset.
+
+        Args:
+            idx (int): Index of the item to get
+
+        Returns:
+            tuple: (image, label)
+        """
         self.total_count += 1
 
         try:
-            # Get the image and label
-            item = self.data[idx]
+            # Get the row from the dataframe
+            row = self.data.iloc[idx]
 
-            # Use 'Presence' as the label field (instead of 'label')
-            if "Presence" in item:
-                label = item["Presence"]
-            else:
-                print(
-                    f"Warning: No 'Presence' field at index {idx}. Available fields: {list(item.keys())}"
-                )
-                label = 0  # Default label
+            # Get the label (Presence column)
+            label = int(row["Presence"])
 
-            # Handle image loading based on the format
-            if "encoded_tile" in item and isinstance(item["encoded_tile"], str):
-                # This is likely a base64 encoded image
+            # Try to get the image from base64 encoding first
+            image = None
+            error_message = ""
+
+            # Try to load from encoded_tile first (most likely to contain the image)
+            if "encoded_tile" in row and pd.notna(row["encoded_tile"]):
                 try:
-                    # Try to decode base64 image
-                    image_data = base64.b64decode(item["encoded_tile"])
+                    # Decode base64 image
+                    base64_content = row["encoded_tile"]
+                    if base64_content.startswith("data:image"):
+                        base64_content = base64_content.split(",", 1)[1]
 
-                    # Check if the decoded data is valid
-                    if len(image_data) < 100:  # Arbitrary small size check
-                        print(
-                            f"Warning: Very small image data at index {idx} (size: {len(image_data)})"
-                        )
-                        image = Image.fromarray(self.default_image)
-                    else:
-                        # Try to open the image from bytes
-                        image = Image.open(io.BytesIO(image_data))
-                        # Convert to RGB if needed
-                        if image.mode != "RGB":
-                            image = image.convert("RGB")
+                    img_data = base64.b64decode(base64_content)
+                    image = Image.open(io.BytesIO(img_data))
+
+                    # Convert to RGB if needed
+                    if image.mode != "RGB":
+                        image = image.convert("RGB")
                 except Exception as e:
-                    self.error_count += 1
-                    error_rate = (self.error_count / self.total_count) * 100
-                    print(
-                        f"Error decoding base64 image at index {idx}: {e} (Error rate: {error_rate:.2f}%)"
-                    )
-                    image = Image.fromarray(self.default_image)
+                    error_message += f"encoded_tile decode error: {str(e)}. "
 
-            elif "tile_path" in item:
-                # This is a path to an image file
+            # Try image_base64 next
+            if (
+                image is None
+                and "image_base64" in row
+                and pd.notna(row["image_base64"])
+            ):
                 try:
-                    image_path = item["tile_path"]
+                    # Decode base64 image
+                    base64_content = row["image_base64"]
+                    if base64_content.startswith("data:image"):
+                        base64_content = base64_content.split(",", 1)[1]
+
+                    img_data = base64.b64decode(base64_content)
+                    image = Image.open(io.BytesIO(img_data))
+
+                    # Convert to RGB if needed
+                    if image.mode != "RGB":
+                        image = image.convert("RGB")
+                except Exception as e:
+                    error_message += f"image_base64 decode error: {str(e)}. "
+
+            # If base64 failed, try to load from file path
+            if image is None and "tile_path" in row and pd.notna(row["tile_path"]):
+                try:
+                    # Try to load from file path
+                    image_path = row["tile_path"]
                     if os.path.exists(image_path):
                         image = Image.open(image_path)
+
                         # Convert to RGB if needed
                         if image.mode != "RGB":
                             image = image.convert("RGB")
                     else:
-                        self.error_count += 1
-                        error_rate = (self.error_count / self.total_count) * 100
-                        print(
-                            f"Image file not found at index {idx}: {image_path} (Error rate: {error_rate:.2f}%)"
-                        )
-                        image = Image.fromarray(self.default_image)
+                        error_message += f"File not found: {image_path}. "
                 except Exception as e:
-                    self.error_count += 1
-                    error_rate = (self.error_count / self.total_count) * 100
-                    print(
-                        f"Error loading image file at index {idx}: {e} (Error rate: {error_rate:.2f}%)"
-                    )
-                    image = Image.fromarray(self.default_image)
+                    error_message += f"File load error: {str(e)}. "
 
-            elif "image" in item and isinstance(item["image"], str):
-                # This is likely a base64 encoded image
-                try:
-                    # Try to decode base64 image
-                    image_data = base64.b64decode(item["image"])
+            # If both methods failed, create a default image
+            if image is None:
+                if self.debug:
+                    print(f"Error loading image at index {idx}: {error_message}")
 
-                    # Check if the decoded data is valid
-                    if len(image_data) < 100:  # Arbitrary small size check
-                        print(
-                            f"Warning: Very small image data at index {idx} (size: {len(image_data)})"
-                        )
-                        image = Image.fromarray(self.default_image)
-                    else:
-                        # Try to open the image from bytes
-                        image = Image.open(io.BytesIO(image_data))
-                        # Convert to RGB if needed
-                        if image.mode != "RGB":
-                            image = image.convert("RGB")
-                except Exception as e:
-                    self.error_count += 1
-                    error_rate = (self.error_count / self.total_count) * 100
-                    print(
-                        f"Error decoding base64 image at index {idx}: {e} (Error rate: {error_rate:.2f}%)"
-                    )
-                    image = Image.fromarray(self.default_image)
-
-            else:
-                # Unknown format, use default image
-                self.error_count += 1
-                error_rate = (self.error_count / self.total_count) * 100
-                print(
-                    f"Unknown image format at index {idx}. Available fields: {list(item.keys())} (Error rate: {error_rate:.2f}%)"
-                )
+                # Create a default image (black square with label text)
                 image = Image.fromarray(self.default_image)
 
-            # Apply transformations if any
+            # Apply transformations if specified
             if self.transform:
                 image = self.transform(image)
 
             return image, label
 
         except Exception as e:
-            self.error_count += 1
-            error_rate = (self.error_count / self.total_count) * 100
-            print(
-                f"Unexpected error at index {idx}: {e} (Error rate: {error_rate:.2f}%)"
-            )
+            if self.debug:
+                print(f"Unexpected error at index {idx}: {str(e)}")
 
             # Return a default image and label
             default_image = Image.fromarray(self.default_image)
@@ -263,6 +254,7 @@ def create_image_dataloaders(dataset, batch_size=16, test_size=0.2, random_state
                 ),
             ]
         ),
+        debug=False,
     )
 
     test_dataset = HorseDetectionDataset(
@@ -276,6 +268,7 @@ def create_image_dataloaders(dataset, batch_size=16, test_size=0.2, random_state
                 ),
             ]
         ),
+        debug=False,
     )
 
     # Determine number of workers based on device
@@ -315,6 +308,7 @@ def train_model(
     num_epochs=30,
     patience=5,
     device=None,
+    gradient_accumulation_steps=4,
 ):
     """
     Train a model on the given data loaders.
@@ -327,6 +321,7 @@ def train_model(
         num_epochs (int): The number of epochs to train for
         patience (int): The number of epochs to wait for improvement before early stopping
         device (str): The device to train on (cuda, mps, or cpu)
+        gradient_accumulation_steps (int): Number of steps to accumulate gradients
 
     Returns:
         tuple: (model, history) where history is a dictionary of training metrics
@@ -343,9 +338,9 @@ def train_model(
     print(f"Using device: {device}")
     model = model.to(device)
 
-    # Define loss function and optimizer
+    # Set up optimizer and loss function
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     # Initialize variables for early stopping
     best_val_loss = float("inf")
@@ -353,7 +348,15 @@ def train_model(
     patience_counter = 0
 
     # Initialize history dictionary
-    history = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
+    history = {
+        "train_loss": [],
+        "train_acc": [],
+        "val_loss": [],
+        "val_acc": [],
+    }
+
+    # Enable mixed precision training if available
+    scaler = torch.cuda.amp.GradScaler() if device == "cuda" else None
 
     # Training loop
     for epoch in range(num_epochs):
@@ -364,38 +367,76 @@ def train_model(
         train_total = 0
 
         # Use tqdm for progress bar
-        train_iterator = tqdm(
-            train_loader, desc=f"Epoch {epoch+1}/{num_epochs} [Train]"
+        train_pbar = tqdm(
+            train_loader,
+            desc=f"Epoch {epoch+1}/{num_epochs} [Train]",
+            leave=True,
         )
 
-        for inputs, labels in train_iterator:
-            # Move data to device
-            inputs = inputs.to(device)
-            labels = labels.to(device).long()  # Ensure labels are long tensors
+        optimizer.zero_grad()  # Zero gradients at the beginning of epoch
 
-            # Zero the parameter gradients
-            optimizer.zero_grad()
+        for batch_idx, (inputs, targets) in enumerate(train_pbar):
+            # Move inputs and targets to device
+            inputs, targets = inputs.to(device), targets.to(device)
 
-            # Forward pass
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
+            # Forward pass with mixed precision if available
+            if scaler is not None:
+                with torch.cuda.amp.autocast():
+                    outputs = model(inputs)
+                    loss = criterion(outputs, targets)
+                    loss = loss / gradient_accumulation_steps  # Scale loss
 
-            # Backward pass and optimize
-            loss.backward()
-            optimizer.step()
+                # Backward pass with gradient scaling
+                scaler.scale(loss).backward()
 
-            # Update statistics
-            train_loss += loss.item() * inputs.size(0)
-            _, predicted = torch.max(outputs, 1)
-            train_total += labels.size(0)
-            train_correct += (predicted == labels).sum().item()
+                # Gradient accumulation
+                if (batch_idx + 1) % gradient_accumulation_steps == 0 or (
+                    batch_idx + 1
+                ) == len(train_loader):
+                    scaler.step(optimizer)
+                    scaler.update()
+                    optimizer.zero_grad()
+            else:
+                # Standard forward pass
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
+                loss = loss / gradient_accumulation_steps  # Scale loss
+
+                # Backward pass
+                loss.backward()
+
+                # Gradient accumulation
+                if (batch_idx + 1) % gradient_accumulation_steps == 0 or (
+                    batch_idx + 1
+                ) == len(train_loader):
+                    optimizer.step()
+                    optimizer.zero_grad()
+
+            # Calculate metrics
+            train_loss += loss.item() * gradient_accumulation_steps
+            _, predicted = outputs.max(1)
+            train_total += targets.size(0)
+            train_correct += predicted.eq(targets).sum().item()
 
             # Update progress bar
-            train_iterator.set_postfix(loss=loss.item())
+            train_acc = 100.0 * train_correct / train_total
+            train_pbar.set_postfix(
+                {
+                    "loss": train_loss / (batch_idx + 1),
+                    "acc": train_acc,
+                }
+            )
 
-        # Calculate average training loss and accuracy
-        train_loss = train_loss / train_total
-        train_acc = train_correct / train_total
+            # Clean up memory if using MPS
+            if device == "mps":
+                # Explicitly delete tensors to free memory
+                del inputs, targets, outputs, loss
+                if batch_idx % 10 == 0:  # Every 10 batches
+                    torch.mps.empty_cache()
+
+        # Calculate epoch metrics
+        train_loss = train_loss / len(train_loader)
+        train_acc = 100.0 * train_correct / train_total
 
         # Validation phase
         model.eval()
@@ -404,36 +445,52 @@ def train_model(
         val_total = 0
 
         with torch.no_grad():
-            # Use tqdm for progress bar
-            val_iterator = tqdm(test_loader, desc=f"Epoch {epoch+1}/{num_epochs} [Val]")
+            val_pbar = tqdm(
+                test_loader,
+                desc=f"Epoch {epoch+1}/{num_epochs} [Val]",
+                leave=True,
+            )
 
-            for inputs, labels in val_iterator:
-                # Move data to device
-                inputs = inputs.to(device)
-                labels = labels.to(device).long()  # Ensure labels are long tensors
+            for inputs, targets in val_pbar:
+                # Move inputs and targets to device
+                inputs, targets = inputs.to(device), targets.to(device)
 
                 # Forward pass
                 outputs = model(inputs)
-                loss = criterion(outputs, labels)
+                loss = criterion(outputs, targets)
 
-                # Update statistics
-                val_loss += loss.item() * inputs.size(0)
-                _, predicted = torch.max(outputs, 1)
-                val_total += labels.size(0)
-                val_correct += (predicted == labels).sum().item()
+                # Calculate metrics
+                val_loss += loss.item()
+                _, predicted = outputs.max(1)
+                val_total += targets.size(0)
+                val_correct += predicted.eq(targets).sum().item()
 
                 # Update progress bar
-                val_iterator.set_postfix(loss=loss.item())
+                val_acc = 100.0 * val_correct / val_total
+                val_pbar.set_postfix(
+                    {
+                        "loss": val_loss / (val_pbar.n + 1),
+                        "acc": val_acc,
+                    }
+                )
 
-        # Calculate average validation loss and accuracy
-        val_loss = val_loss / val_total
-        val_acc = val_correct / val_total
+                # Clean up memory if using MPS
+                if device == "mps":
+                    del inputs, targets, outputs, loss
 
-        # Print epoch statistics
+            # Clean up cache after validation
+            if device == "mps":
+                torch.mps.empty_cache()
+
+        # Calculate epoch metrics
+        val_loss = val_loss / len(test_loader)
+        val_acc = 100.0 * val_correct / val_total
+
+        # Print epoch results
         print(
             f"Epoch {epoch+1}/{num_epochs} - "
-            f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, "
-            f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}"
+            f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}% | "
+            f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%"
         )
 
         # Update history
@@ -442,15 +499,21 @@ def train_model(
         history["val_loss"].append(val_loss)
         history["val_acc"].append(val_acc)
 
-        # Check for early stopping
+        # Check for improvement
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_model_state = model.state_dict().copy()
             patience_counter = 0
+            print(f"Validation loss improved to {best_val_loss:.4f}")
         else:
             patience_counter += 1
+            print(
+                f"Validation loss did not improve. Patience: {patience_counter}/{patience}"
+            )
+
+            # Early stopping
             if patience_counter >= patience:
-                print(f"Early stopping at epoch {epoch+1}")
+                print(f"Early stopping after {epoch+1} epochs")
                 break
 
     # Load the best model weights
@@ -503,7 +566,9 @@ def plot_training_history(history, output_path):
 
 
 def parse_args():
-    """Parse command line arguments."""
+    """
+    Parse command line arguments.
+    """
     parser = argparse.ArgumentParser(description="Horse Detection Model")
 
     # Dataset arguments
@@ -559,6 +624,12 @@ def parse_args():
         default="cuda" if torch.cuda.is_available() else "cpu",
         help="Device to train on",
     )
+    parser.add_argument(
+        "--gradient_accumulation_steps",
+        type=int,
+        default=4,
+        help="Number of steps to accumulate gradients",
+    )
 
     # Output arguments
     parser.add_argument(
@@ -579,6 +650,13 @@ def parse_args():
         "--plot_history",
         action="store_true",
         help="Whether to plot the training history",
+    )
+
+    parser.add_argument(
+        "--subset_size",
+        type=int,
+        default=0,
+        help="Use a subset of the dataset for faster testing (0 for full dataset)",
     )
 
     return parser.parse_args()
@@ -684,6 +762,91 @@ def download_and_cache_dataset(
         raise
 
 
+def inspect_dataset(dataset, num_samples=5):
+    """
+    Inspect the dataset to verify image encoding.
+
+    Args:
+        dataset (pd.DataFrame): The dataset to inspect
+        num_samples (int): Number of samples to inspect
+    """
+    print(f"\n{'='*50}")
+    print("DATASET INSPECTION")
+    print(f"{'='*50}")
+    print(f"Dataset type: {type(dataset)}")
+    print(f"Dataset shape: {dataset.shape}")
+    print(f"Dataset columns: {dataset.columns.tolist()}")
+
+    # Check for image columns
+    image_columns = []
+    for col in dataset.columns:
+        if "image" in col.lower() or "tile" in col.lower() or "encoded" in col.lower():
+            image_columns.append(col)
+
+    print(f"\nPotential image columns: {image_columns}")
+
+    # Check for label column
+    if "Presence" in dataset.columns:
+        print(f"\nLabel column 'Presence' found")
+        print(f"Label distribution:\n{dataset['Presence'].value_counts()}")
+    else:
+        print("\nWARNING: Label column 'Presence' not found!")
+
+    # Inspect a few samples
+    print(f"\nInspecting {num_samples} random samples:")
+    sample_indices = np.random.choice(
+        len(dataset), min(num_samples, len(dataset)), replace=False
+    )
+
+    for i, idx in enumerate(sample_indices):
+        print(f"\nSample {i+1}/{num_samples} (Index {idx}):")
+        row = dataset.iloc[idx]
+
+        # Print non-image columns
+        for col in dataset.columns:
+            if col not in image_columns and not pd.isna(row[col]):
+                print(f"  {col}: {row[col]}")
+
+        # Check image columns
+        for col in image_columns:
+            if pd.isna(row[col]):
+                print(f"  {col}: None")
+            elif isinstance(row[col], str) and row[col].startswith(
+                ("data:image", "/9j/", "iVBOR")
+            ):
+                print(f"  {col}: Base64 encoded image (length: {len(row[col])})")
+                # Try to decode and verify
+                try:
+                    # Extract base64 content if it's a data URL
+                    base64_content = row[col]
+                    if base64_content.startswith("data:image"):
+                        base64_content = base64_content.split(",", 1)[1]
+
+                    # Decode and check if it's a valid image
+                    img_data = base64.b64decode(base64_content)
+                    img = Image.open(io.BytesIO(img_data))
+                    print(
+                        f"    Successfully decoded: {img.format} image, size {img.size}"
+                    )
+                except Exception as e:
+                    print(f"    Failed to decode: {str(e)}")
+            elif isinstance(row[col], str) and os.path.exists(row[col]):
+                print(f"  {col}: File path (exists: {os.path.exists(row[col])})")
+                try:
+                    img = Image.open(row[col])
+                    print(
+                        f"    Successfully loaded: {img.format} image, size {img.size}"
+                    )
+                except Exception as e:
+                    print(f"    Failed to load: {str(e)}")
+            else:
+                print(
+                    f"  {col}: {type(row[col]).__name__} (length: {len(str(row[col]))})"
+                )
+
+    print(f"\n{'='*50}")
+
+
 def main():
     """
     Main function to run the horse detection model.
@@ -702,6 +865,11 @@ def main():
         torch.cuda.manual_seed_all(args.random_seed)
     elif hasattr(torch, "mps") and torch.backends.mps.is_available():
         device = "mps"
+        # Set MPS memory management
+        if hasattr(torch.mps, "set_per_process_memory_fraction"):
+            torch.mps.set_per_process_memory_fraction(
+                0.8
+            )  # Use 80% of available memory
     else:
         device = "cpu"
 
@@ -714,15 +882,26 @@ def main():
     try:
         # Download and cache the dataset
         print(f"Loading dataset from {args.dataset_path}")
-        if args.use_auth:
-            print("Using authentication for Hugging Face")
-            dataset = download_and_cache_dataset(
-                args.dataset_path, use_auth=True, cache_dir=args.cache_dir
+        dataset = download_and_cache_dataset(
+            args.dataset_path, use_auth=args.use_auth, cache_dir=args.cache_dir
+        )
+
+        # Inspect the dataset
+        inspect_dataset(dataset, num_samples=5)
+
+        # Use a subset of the dataset if specified
+        if args.subset_size > 0 and args.subset_size < len(dataset):
+            print(f"Using a subset of {args.subset_size} samples for faster testing")
+            # Ensure balanced classes in the subset
+            presence_1 = dataset[dataset["Presence"] == 1].sample(
+                args.subset_size // 2, random_state=args.random_seed
             )
-        else:
-            dataset = download_and_cache_dataset(
-                args.dataset_path, use_auth=False, cache_dir=args.cache_dir
+            presence_0 = dataset[dataset["Presence"] == 0].sample(
+                args.subset_size // 2, random_state=args.random_seed
             )
+            dataset = pd.concat([presence_1, presence_0]).reset_index(drop=True)
+            print(f"Subset size: {len(dataset)}")
+            print(f"Subset label distribution: {dataset['Presence'].value_counts()}")
 
         # Create data loaders
         print("Creating data loaders")
@@ -749,6 +928,7 @@ def main():
             num_epochs=args.num_epochs,
             patience=args.patience,
             device=device,
+            gradient_accumulation_steps=args.gradient_accumulation_steps,
         )
 
         # Save model if requested
