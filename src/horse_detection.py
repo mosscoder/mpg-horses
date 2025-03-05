@@ -325,8 +325,8 @@ def create_image_dataloaders(
 
     print(f"Using {num_workers} workers for data loading")
 
-    # Create dataset
-    horse_dataset = HorseDetectionDataset(dataset)
+    # Create dataset with debug mode to see what's happening
+    horse_dataset = HorseDetectionDataset(dataset, debug=True)
 
     # Split dataset into train and test sets
     dataset_size = len(horse_dataset)
@@ -334,15 +334,47 @@ def create_image_dataloaders(
     train_size = dataset_size - test_size_int
 
     # Get class distribution for stratified split
-    labels = [horse_dataset[i][1] for i in range(dataset_size)]
+    # Use a try-except block to handle potential errors
+    try:
+        # Get labels for stratification
+        if isinstance(dataset, pd.DataFrame):
+            # For pandas DataFrame, use the Presence column directly
+            labels = dataset["Presence"].values
+        else:
+            # For other dataset types, extract labels from the dataset
+            labels = []
+            for i in range(min(1000, dataset_size)):  # Sample a subset for efficiency
+                try:
+                    _, label = horse_dataset[i]
+                    labels.append(label)
+                except Exception as e:
+                    print(f"Error getting label for item {i}: {str(e)}")
+                    labels.append(0)  # Default to 0 if there's an error
 
-    # Use sklearn for stratified split
-    from sklearn.model_selection import train_test_split
+            # If we sampled, repeat the pattern to match dataset size
+            if len(labels) < dataset_size:
+                labels = labels * (dataset_size // len(labels) + 1)
+                labels = labels[:dataset_size]
 
-    indices = list(range(dataset_size))
-    train_indices, test_indices = train_test_split(
-        indices, test_size=test_size, stratify=labels, random_state=seed
-    )
+        print(f"Label distribution: {pd.Series(labels).value_counts().to_dict()}")
+
+        # Use sklearn for stratified split
+        from sklearn.model_selection import train_test_split
+
+        indices = list(range(dataset_size))
+        train_indices, test_indices = train_test_split(
+            indices, test_size=test_size, stratify=labels, random_state=seed
+        )
+    except Exception as e:
+        print(f"Error during stratified split: {str(e)}")
+        print("Falling back to random split")
+
+        # Fall back to random split
+        indices = list(range(dataset_size))
+        random.seed(seed)
+        random.shuffle(indices)
+        train_indices = indices[:train_size]
+        test_indices = indices[train_size:]
 
     # Create samplers
     train_sampler = torch.utils.data.SubsetRandomSampler(train_indices)
