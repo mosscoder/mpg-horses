@@ -78,71 +78,58 @@ class HorseDetectionDataset(Dataset):
             idx: Index of the item to retrieve
 
         Returns:
-            tuple: (image, label) where label is the presence of horses (0 or 1)
+            tuple: (image, label) where label is 1 if horses are present, 0 otherwise
         """
         try:
-            # Get the row at the specified index
+            # Get the row from the dataframe
             row = self.df.iloc[idx]
 
-            # Try to get image data from different possible sources
-            img = None
-
-            # First try to get from image_base64 field
-            if "image_base64" in row and not pd.isna(row["image_base64"]):
+            # Try to load the image from the image_base64 field
+            img_data = None
+            if "image_base64" in row and row["image_base64"] is not None:
                 img_data = row["image_base64"]
-                # Check if img_data is a string (likely base64 encoded)
-                if isinstance(img_data, str):
-                    # Handle data URL format if present
-                    if img_data.startswith("data:image"):
+
+                # If img_data is binary data, use it directly
+                if isinstance(img_data, bytes):
+                    img = Image.open(io.BytesIO(img_data))
+                # If it's a string (possibly base64 encoded or a data URL)
+                elif isinstance(img_data, str):
+                    # Handle data URL format (data:image/jpeg;base64,...)
+                    if img_data.startswith("data:"):
                         # Extract the base64 part after the comma
                         img_data = img_data.split(",", 1)[1]
 
-                    try:
-                        # Decode base64 string to bytes
-                        decoded_data = base64.b64decode(img_data)
-                        img = Image.open(io.BytesIO(decoded_data))
-                    except Exception as e:
-                        print(f"Error processing item {idx}: {str(e)}")
-                        img = None
-                # Handle if img_data is already bytes
-                elif isinstance(img_data, bytes):
-                    try:
-                        img = Image.open(io.BytesIO(img_data))
-                    except Exception as e:
-                        print(f"Error processing item {idx}: {str(e)}")
-                        img = None
+                    # Decode base64 string to bytes
+                    decoded_data = base64.b64decode(img_data)
+                    img = Image.open(io.BytesIO(decoded_data))
+                else:
+                    raise ValueError(
+                        f"Unsupported image_base64 data type: {type(img_data)}"
+                    )
 
-            # If no image yet, try encoded_tile field
-            if (
-                img is None
-                and "encoded_tile" in row
-                and not pd.isna(row["encoded_tile"])
-            ):
+            # If image_base64 is not available, try encoded_tile
+            elif "encoded_tile" in row and row["encoded_tile"] is not None:
                 img_data = row["encoded_tile"]
-                # Check if img_data is a string (likely base64 encoded)
-                if isinstance(img_data, str):
-                    # Handle data URL format if present
-                    if img_data.startswith("data:image"):
+
+                # If img_data is binary data, use it directly
+                if isinstance(img_data, bytes):
+                    img = Image.open(io.BytesIO(img_data))
+                # If it's a string (possibly base64 encoded or a data URL)
+                elif isinstance(img_data, str):
+                    # Handle data URL format (data:image/jpeg;base64,...)
+                    if img_data.startswith("data:"):
                         # Extract the base64 part after the comma
                         img_data = img_data.split(",", 1)[1]
 
-                    try:
-                        # Decode base64 string to bytes
-                        decoded_data = base64.b64decode(img_data)
-                        img = Image.open(io.BytesIO(decoded_data))
-                    except Exception as e:
-                        print(f"Error processing item {idx}: {str(e)}")
-                        img = None
-                # Handle if img_data is already bytes
-                elif isinstance(img_data, bytes):
-                    try:
-                        img = Image.open(io.BytesIO(img_data))
-                    except Exception as e:
-                        print(f"Error processing item {idx}: {str(e)}")
-                        img = None
-
-            # If still no image, create a blank one
-            if img is None:
+                    # Decode base64 string to bytes
+                    decoded_data = base64.b64decode(img_data)
+                    img = Image.open(io.BytesIO(decoded_data))
+                else:
+                    raise ValueError(
+                        f"Unsupported encoded_tile data type: {type(img_data)}"
+                    )
+            else:
+                # If no image data is found, create a blank image
                 img = Image.new("RGB", (224, 224), color="gray")
 
             # Apply transformations if specified
