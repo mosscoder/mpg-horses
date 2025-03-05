@@ -37,6 +37,8 @@ import random
 import warnings
 import time
 from collections import Counter
+import copy
+import logging
 
 # Import utility modules
 from data_utils import create_dataloaders, get_input_size
@@ -494,73 +496,56 @@ def create_image_dataloaders(
 
 def train_model(
     model,
-    train_loader,
-    test_loader,
-    learning_rate=0.0001,
-    num_epochs=30,
-    patience=5,
-    device=None,
-    gradient_accumulation_steps=4,
+    train_dataloader,
+    test_dataloader,
+    criterion,
+    optimizer,
+    scheduler=None,
+    device="cpu",
+    num_epochs=10,
+    patience=3,
+    gradient_accumulation_steps=1,
 ):
     """
-    Train a model on the given data loaders.
+    Train a model.
 
     Args:
-        model (nn.Module): The model to train
-        train_loader (DataLoader): The training data loader
-        test_loader (DataLoader): The testing data loader
-        learning_rate (float): The learning rate
-        num_epochs (int): The number of epochs to train for
-        patience (int): The number of epochs to wait for improvement before early stopping
-        device (str): The device to train on (cuda, mps, or cpu)
-        gradient_accumulation_steps (int): Number of steps to accumulate gradients
+        model: The model to train
+        train_dataloader: The training dataloader
+        test_dataloader: The test dataloader
+        criterion: The loss function
+        optimizer: The optimizer
+        scheduler: The learning rate scheduler
+        device: The device to use for training
+        num_epochs: The number of epochs to train for
+        patience: The number of epochs to wait for improvement before early stopping
+        gradient_accumulation_steps: The number of steps to accumulate gradients over
 
     Returns:
-        tuple: (model, history) where history is a dictionary of training metrics
+        dict: Training history
     """
-    # Set device
-    if device is None:
-        if torch.cuda.is_available():
-            device = "cuda"
-        elif hasattr(torch, "mps") and torch.backends.mps.is_available():
-            device = "mps"
-        else:
-            device = "cpu"
+    # Initialize variables
+    best_acc = 0.0
+    best_model_wts = copy.deepcopy(model.state_dict())
+    best_epoch = 0
+    no_improve_epochs = 0
 
-    print(f"Using device: {device}")
-    model = model.to(device)
-
-    # Set up optimizer and loss function
-    optimizer = torch.optim.AdamW(
-        model.parameters(), lr=learning_rate, weight_decay=0.01
-    )
-
-    # Add learning rate scheduler
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=2, verbose=True
-    )
-
-    criterion = nn.CrossEntropyLoss()
-
-    # Initialize variables for early stopping
-    best_val_loss = float("inf")
-    best_model_state = None
-    patience_counter = 0
-
-    # Initialize history dictionary
+    # Initialize history
     history = {
         "train_loss": [],
         "train_acc": [],
         "val_loss": [],
         "val_acc": [],
+        "lr": [],
     }
 
-    # Enable mixed precision training if available
-    use_amp = device == "cuda"
-    scaler = torch.cuda.amp.GradScaler() if use_amp else None
+    # Train model
+    print(f"Starting training for {num_epochs} epochs...")
+    start_time = time.time()
 
-    # Training loop
     for epoch in range(num_epochs):
+        print(f"Epoch {epoch + 1}/{num_epochs}")
+
         # Training phase
         model.train()
         train_loss = 0.0
@@ -569,51 +554,40 @@ def train_model(
 
         # Use tqdm for progress bar
         train_pbar = tqdm(
-            train_loader,
-            desc=f"Epoch {epoch+1}/{num_epochs} [Train]",
-            leave=True,
+            train_dataloader, desc=f"Training Epoch {epoch + 1}/{num_epochs}"
         )
 
-        optimizer.zero_grad()  # Zero gradients at the beginning of epoch
+        # Reset gradients
+        optimizer.zero_grad()
 
         for batch_idx, (inputs, targets) in enumerate(train_pbar):
-            # Move inputs and targets to device
+            # Move data to device
             inputs, targets = inputs.to(device), targets.to(device)
 
-            # Forward pass with mixed precision if available
-            if use_amp:
-                with torch.cuda.amp.autocast():
-                    outputs = model(inputs)
-                    loss = criterion(outputs, targets)
-                    loss = loss / gradient_accumulation_steps  # Scale loss
+            # Forward pass
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
 
-                # Backward pass with gradient scaling
-                scaler.scale(loss).backward()
+            # Scale loss by gradient accumulation steps
+            loss = loss / gradient_accumulation_steps
 
-                # Gradient accumulation
-                if (batch_idx + 1) % gradient_accumulation_steps == 0 or (
-                    batch_idx + 1
-                ) == len(train_loader):
-                    scaler.step(optimizer)
-                    scaler.update()
-                    optimizer.zero_grad()
-            else:
-                # Standard forward pass
-                outputs = model(inputs)
-                loss = criterion(outputs, targets)
-                loss = loss / gradient_accumulation_steps  # Scale loss
+            # Backward pass
+            loss.backward()
 
-                # Backward pass
-                loss.backward()
+            # Update weights if we've accumulated enough gradients
+            if (batch_idx + 1) % gradient_accumulation_steps == 0 or (
+                batch_idx + 1
+            ) == len(train_dataloader):
+                # Clip gradients to prevent exploding gradients
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
-                # Gradient accumulation
-                if (batch_idx + 1) % gradient_accumulation_steps == 0 or (
-                    batch_idx + 1
-                ) == len(train_loader):
-                    optimizer.step()
-                    optimizer.zero_grad()
+                # Update weights
+                optimizer.step()
 
-            # Calculate metrics
+                # Reset gradients
+                optimizer.zero_grad()
+
+            # Update metrics
             train_loss += loss.item() * gradient_accumulation_steps
             _, predicted = outputs.max(1)
             train_total += targets.size(0)
@@ -622,21 +596,16 @@ def train_model(
             # Update progress bar
             train_acc = 100.0 * train_correct / train_total
             train_pbar.set_postfix(
-                {
-                    "loss": train_loss / (batch_idx + 1),
-                    "acc": train_acc,
-                }
+                {"loss": train_loss / (batch_idx + 1), "acc": f"{train_acc:.2f}%"}
             )
 
             # Clean up memory if using MPS
             if device == "mps":
-                # Explicitly delete tensors to free memory
                 del inputs, targets, outputs, loss
-                if batch_idx % 10 == 0:  # Every 10 batches
-                    torch.mps.empty_cache()
+                torch.mps.empty_cache()
 
         # Calculate epoch metrics
-        train_loss = train_loss / len(train_loader)
+        train_loss = train_loss / len(train_dataloader)
         train_acc = 100.0 * train_correct / train_total
 
         # Validation phase
@@ -645,133 +614,187 @@ def train_model(
         val_correct = 0
         val_total = 0
 
-        with torch.no_grad():
-            val_pbar = tqdm(
-                test_loader,
-                desc=f"Epoch {epoch+1}/{num_epochs} [Val]",
-                leave=True,
-            )
+        # Calculate class-specific metrics
+        val_class_counts = {0: 0, 1: 0}
+        val_class_correct = {0: 0, 1: 0}
 
+        # Use tqdm for progress bar
+        val_pbar = tqdm(
+            test_dataloader, desc=f"Validation Epoch {epoch + 1}/{num_epochs}"
+        )
+
+        with torch.no_grad():
             for inputs, targets in val_pbar:
-                # Move inputs and targets to device
+                # Move data to device
                 inputs, targets = inputs.to(device), targets.to(device)
 
                 # Forward pass
-                if use_amp:
-                    with torch.cuda.amp.autocast():
-                        outputs = model(inputs)
-                        loss = criterion(outputs, targets)
-                else:
-                    outputs = model(inputs)
-                    loss = criterion(outputs, targets)
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
 
-                # Calculate metrics
+                # Update metrics
                 val_loss += loss.item()
                 _, predicted = outputs.max(1)
                 val_total += targets.size(0)
                 val_correct += predicted.eq(targets).sum().item()
 
+                # Update class-specific metrics
+                for i in range(targets.size(0)):
+                    label = targets[i].item()
+                    val_class_counts[label] += 1
+                    if predicted[i].item() == label:
+                        val_class_correct[label] += 1
+
                 # Update progress bar
                 val_acc = 100.0 * val_correct / val_total
                 val_pbar.set_postfix(
-                    {
-                        "loss": val_loss / (val_pbar.n + 1),
-                        "acc": val_acc,
-                    }
+                    {"loss": val_loss / (val_pbar.n + 1), "acc": f"{val_acc:.2f}%"}
                 )
 
                 # Clean up memory if using MPS
                 if device == "mps":
                     del inputs, targets, outputs, loss
-
-            # Clean up cache after validation
-            if device == "mps":
-                torch.mps.empty_cache()
+                    torch.mps.empty_cache()
 
         # Calculate epoch metrics
-        val_loss = val_loss / len(test_loader)
+        val_loss = val_loss / len(test_dataloader)
         val_acc = 100.0 * val_correct / val_total
 
-        # Update learning rate scheduler
-        scheduler.step(val_loss)
+        # Print epoch metrics
+        print(f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%")
+        print(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%")
 
-        # Print epoch results
-        print(
-            f"Epoch {epoch+1}/{num_epochs} - "
-            f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}% | "
-            f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%"
-        )
+        # Print class-specific metrics
+        for class_idx in val_class_counts:
+            if val_class_counts[class_idx] > 0:
+                class_acc = (
+                    100.0 * val_class_correct[class_idx] / val_class_counts[class_idx]
+                )
+                print(
+                    f"Class {class_idx} Val Acc: {class_acc:.2f}% ({val_class_correct[class_idx]}/{val_class_counts[class_idx]})"
+                )
+
+        # Calculate precision, recall, and F1 score
+        if val_class_correct[1] + (val_class_counts[0] - val_class_correct[0]) > 0:
+            precision = val_class_correct[1] / (
+                val_class_correct[1] + (val_class_counts[0] - val_class_correct[0])
+            )
+        else:
+            precision = 0
+
+        if val_class_correct[1] + (val_class_counts[1] - val_class_correct[1]) > 0:
+            recall = val_class_correct[1] / (
+                val_class_correct[1] + (val_class_counts[1] - val_class_correct[1])
+            )
+        else:
+            recall = 0
+
+        if precision + recall > 0:
+            f1 = 2 * precision * recall / (precision + recall)
+        else:
+            f1 = 0
+
+        print(f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1: {f1:.4f}")
+
+        # Update learning rate scheduler
+        if scheduler is not None:
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(val_acc)
+            else:
+                scheduler.step()
+
+        # Get current learning rate
+        current_lr = optimizer.param_groups[0]["lr"]
+        print(f"Learning rate: {current_lr:.6f}")
 
         # Update history
         history["train_loss"].append(train_loss)
         history["train_acc"].append(train_acc)
         history["val_loss"].append(val_loss)
         history["val_acc"].append(val_acc)
+        history["lr"].append(current_lr)
 
-        # Check for improvement
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            best_model_state = model.state_dict().copy()
-            patience_counter = 0
-            print(f"Validation loss improved to {best_val_loss:.4f}")
+        # Check if this is the best model
+        if val_acc > best_acc:
+            best_acc = val_acc
+            best_model_wts = copy.deepcopy(model.state_dict())
+            best_epoch = epoch
+            no_improve_epochs = 0
         else:
-            patience_counter += 1
+            no_improve_epochs += 1
+
+        # Early stopping
+        if no_improve_epochs >= patience:
             print(
-                f"Validation loss did not improve. Patience: {patience_counter}/{patience}"
+                f"Early stopping at epoch {epoch + 1} as validation accuracy hasn't improved for {patience} epochs"
             )
+            break
 
-            # Early stopping
-            if patience_counter >= patience:
-                print(f"Early stopping after {epoch+1} epochs")
-                break
+        # Print separator
+        print("-" * 60)
 
-    # Load the best model weights
-    if best_model_state is not None:
-        model.load_state_dict(best_model_state)
+    # Print training summary
+    time_elapsed = time.time() - start_time
+    print(f"Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s")
+    print(f"Best validation accuracy: {best_acc:.2f}% at epoch {best_epoch + 1}")
 
-    return model, history
+    # Load best model weights
+    model.load_state_dict(best_model_wts)
+
+    return history
 
 
-def plot_training_history(history, output_path):
+def plot_training_history(history, figure_dir, figure_name=None):
     """
-    Plot the training history.
+    Plot training history.
 
     Args:
-        history (dict): Dictionary containing training metrics
-        output_path (str): Path to save the plot
+        history (dict): Training history
+        figure_dir (str): The directory to save the figure to
+        figure_name (str): The name of the figure file
     """
-    try:
-        # Create figure with two subplots
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    # Create figure directory if it doesn't exist
+    os.makedirs(figure_dir, exist_ok=True)
 
-        # Plot loss
-        ax1.plot(history["train_loss"], label="Train Loss")
-        ax1.plot(history["val_loss"], label="Validation Loss")
-        ax1.set_xlabel("Epoch")
-        ax1.set_ylabel("Loss")
-        ax1.set_title("Training and Validation Loss")
-        ax1.legend()
-        ax1.grid(True)
+    # Set default figure name if not provided
+    if figure_name is None:
+        figure_name = f"training_history_{time.strftime('%Y%m%d_%H%M%S')}.png"
 
-        # Plot accuracy
-        ax2.plot(history["train_acc"], label="Train Accuracy")
-        ax2.plot(history["val_acc"], label="Validation Accuracy")
-        ax2.set_xlabel("Epoch")
-        ax2.set_ylabel("Accuracy")
-        ax2.set_title("Training and Validation Accuracy")
-        ax2.legend()
-        ax2.grid(True)
+    # Add .png extension if not present
+    if not figure_name.endswith(".png"):
+        figure_name += ".png"
 
-        # Adjust layout and save figure
-        plt.tight_layout()
-        plt.savefig(output_path)
-        plt.close()
+    # Create figure
+    plt.figure(figsize=(12, 10))
 
-        print(f"Training history plot saved to {output_path}")
+    # Plot training and validation loss
+    plt.subplot(2, 1, 1)
+    plt.plot(history["train_loss"], label="Train Loss")
+    plt.plot(history["val_loss"], label="Validation Loss")
+    plt.title("Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.grid(True)
 
-    except Exception as e:
-        print(f"Error plotting training history: {str(e)}")
-        traceback.print_exc()
+    # Plot training and validation accuracy
+    plt.subplot(2, 1, 2)
+    plt.plot(history["train_acc"], label="Train Accuracy")
+    plt.plot(history["val_acc"], label="Validation Accuracy")
+    plt.title("Accuracy")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy (%)")
+    plt.legend()
+    plt.grid(True)
+
+    # Adjust layout
+    plt.tight_layout()
+
+    # Save figure
+    figure_path = os.path.join(figure_dir, figure_name)
+    print(f"Saving figure to {figure_path}")
+    plt.savefig(figure_path)
+    plt.close()
 
 
 def parse_args():
@@ -781,14 +804,14 @@ def parse_args():
     Returns:
         argparse.Namespace: Parsed arguments
     """
-    parser = argparse.ArgumentParser(description="Horse Detection Model")
+    parser = argparse.ArgumentParser(description="Horse Detection")
 
     # Dataset arguments
     parser.add_argument(
-        "--dataset_path",
+        "--dataset_name",
         type=str,
         default="mpg-ranch/horse-detection",
-        help="Path to the dataset on Hugging Face Hub",
+        help="Name of the dataset to use",
     )
     parser.add_argument(
         "--cache_dir",
@@ -797,16 +820,21 @@ def parse_args():
         help="Directory to cache the dataset",
     )
     parser.add_argument(
+        "--force_download",
+        action="store_true",
+        help="Force download of the dataset",
+    )
+    parser.add_argument(
         "--subset_size",
         type=int,
         default=0,
-        help="Number of samples to use (0 for full dataset)",
+        help="Size of the subset to use (0 for full dataset)",
     )
     parser.add_argument(
         "--test_size",
         type=float,
         default=0.2,
-        help="Proportion of the dataset to use for testing",
+        help="Fraction of the dataset to use for testing",
     )
 
     # Model arguments
@@ -833,10 +861,16 @@ def parse_args():
         help="Type of CNN model to use",
     )
     parser.add_argument(
-        "--vit_model_name",
+        "--vit_model_type",
         type=str,
-        default="google/vit-base-patch16-224",
-        help="Name of ViT model to use",
+        default="vit_base_patch16_224",
+        help="Type of ViT model to use",
+    )
+    parser.add_argument(
+        "--pretrained",
+        action="store_true",
+        default=True,
+        help="Use pretrained model",
     )
 
     # Training arguments
@@ -853,6 +887,12 @@ def parse_args():
         help="Learning rate for training",
     )
     parser.add_argument(
+        "--weight_decay",
+        type=float,
+        default=0.01,
+        help="Weight decay for training",
+    )
+    parser.add_argument(
         "--num_epochs",
         type=int,
         default=10,
@@ -867,45 +907,69 @@ def parse_args():
     parser.add_argument(
         "--gradient_accumulation_steps",
         type=int,
-        default=2,
-        help="Number of steps to accumulate gradients",
+        default=1,
+        help="Number of steps to accumulate gradients over",
     )
-
-    # Output arguments
     parser.add_argument(
-        "--results_dir",
+        "--num_workers",
+        type=int,
+        default=4,
+        help="Number of workers for data loading",
+    )
+    parser.add_argument(
+        "--device",
         type=str,
-        default="results/figures",
-        help="Directory to save results",
+        default=None,
+        choices=["cuda", "mps", "cpu"],
+        help="Device to use for training",
     )
-    parser.add_argument(
-        "--models_dir",
-        type=str,
-        default="models",
-        help="Directory to save models",
-    )
-    parser.add_argument(
-        "--save_model",
-        action="store_true",
-        help="Whether to save the model",
-    )
-    parser.add_argument(
-        "--plot_history",
-        action="store_true",
-        help="Whether to plot the training history",
-    )
-
-    # Misc arguments
     parser.add_argument(
         "--seed",
         type=int,
         default=42,
         help="Random seed for reproducibility",
     )
+
+    # Output arguments
     parser.add_argument(
-        "--use_auth",
+        "--save_model",
         action="store_true",
-        help="Whether to use authentication for Hugging Face Hub",
+        help="Save the model after training",
+    )
+    parser.add_argument(
+        "--model_dir",
+        type=str,
+        default="models",
+        help="Directory to save the model",
+    )
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        default=None,
+        help="Name of the model file",
+    )
+    parser.add_argument(
+        "--plot_history",
+        action="store_true",
+        help="Plot the training history",
+    )
+    parser.add_argument(
+        "--figure_dir",
+        type=str,
+        default="results/figures",
+        help="Directory to save the figure",
+    )
+    parser.add_argument(
+        "--figure_name",
+        type=str,
+        default=None,
+        help="Name of the figure file",
+    )
+    parser.add_argument(
+        "--log_file",
+        type=str,
+        default=None,
+        help="Path to the log file",
     )
 
     return parser.parse_args()
@@ -927,50 +991,57 @@ def set_seed(seed):
 
 
 def download_and_cache_dataset(
-    dataset_path, cache_dir="data/cached_datasets", use_auth=False
+    dataset_name, cache_dir="data/cached_datasets", force_download=False
 ):
     """
-    Download and cache a dataset from Hugging Face Hub.
+    Download and cache a dataset from the Hugging Face Hub.
 
     Args:
-        dataset_path (str): Path to the dataset on Hugging Face Hub
+        dataset_name (str): Name of the dataset on the Hugging Face Hub
         cache_dir (str): Directory to cache the dataset
-        use_auth (bool): Whether to use authentication for Hugging Face Hub
+        force_download (bool): Whether to force download the dataset
 
     Returns:
-        Dataset: The downloaded dataset
+        pandas.DataFrame: The dataset
     """
     # Create cache directory if it doesn't exist
     os.makedirs(cache_dir, exist_ok=True)
 
-    # Create a cache file path
-    cache_file = os.path.join(cache_dir, f"{dataset_path.replace('/', '_')}.parquet")
+    # Create cache file path
+    dataset_slug = dataset_name.replace("/", "_")
+    cache_file = os.path.join(cache_dir, f"{dataset_slug}.parquet")
 
-    # Check if the dataset is already cached
-    if os.path.exists(cache_file):
+    # Check if cache file exists
+    if os.path.exists(cache_file) and not force_download:
         print(f"Loading dataset from cache: {cache_file}")
-        dataset = pd.read_parquet(cache_file)
-        print(f"Loaded cached dataset with {len(dataset)} samples")
-        return dataset
+        return pd.read_parquet(cache_file)
 
-    # Download the dataset from Hugging Face Hub
-    print(f"Downloading dataset from Hugging Face Hub: {dataset_path}")
+    # Download dataset
+    print(f"Downloading dataset {dataset_name}...")
     try:
-        dataset = load_dataset(dataset_path, use_auth_token=use_auth)
+        # Try to load from Hugging Face Hub
+        dataset = load_dataset(dataset_name)
 
-        # Convert to pandas DataFrame and save to cache
-        if isinstance(dataset, dict) and "train" in dataset:
+        # Convert to pandas DataFrame
+        if "train" in dataset:
             df = dataset["train"].to_pandas()
         else:
-            df = dataset.to_pandas()
+            df = next(iter(dataset.values())).to_pandas()
 
+        # Save to cache
         print(f"Saving dataset to cache: {cache_file}")
         df.to_parquet(cache_file)
-        print(f"Dataset cached with {len(df)} samples")
+
         return df
     except Exception as e:
         print(f"Error downloading dataset: {str(e)}")
-        raise
+
+        # Check if cache file exists as fallback
+        if os.path.exists(cache_file):
+            print(f"Loading dataset from cache as fallback: {cache_file}")
+            return pd.read_parquet(cache_file)
+
+        raise e
 
 
 def inspect_dataset(dataset, num_samples=5):
@@ -1309,15 +1380,6 @@ def main(args):
         weight_decay=args.weight_decay,
     )
 
-    # Set up learning rate scheduler
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        mode="max",
-        factor=0.5,
-        patience=2,
-        verbose=True,
-    )
-
     # Set up loss function
     criterion = nn.CrossEntropyLoss()
 
@@ -1328,7 +1390,6 @@ def main(args):
         test_dataloader=test_dataloader,
         criterion=criterion,
         optimizer=optimizer,
-        scheduler=scheduler,
         device=device,
         num_epochs=args.num_epochs,
         patience=args.patience,
@@ -1361,3 +1422,70 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error in main function: {str(e)}")
         traceback.print_exc()
+
+
+def get_device(device=None):
+    """
+    Get the device to use for training.
+
+    Args:
+        device (str): The device to use (cuda, mps, or cpu)
+
+    Returns:
+        str: The device to use
+    """
+    if device is not None:
+        return device
+
+    if torch.cuda.is_available():
+        return "cuda"
+    elif hasattr(torch, "mps") and torch.backends.mps.is_available():
+        return "mps"
+    else:
+        return "cpu"
+
+
+def save_model(model, model_dir, model_name=None):
+    """
+    Save a model to disk.
+
+    Args:
+        model: The model to save
+        model_dir (str): The directory to save the model to
+        model_name (str): The name of the model file
+    """
+    # Create model directory if it doesn't exist
+    os.makedirs(model_dir, exist_ok=True)
+
+    # Set default model name if not provided
+    if model_name is None:
+        model_name = f"horse_detection_{time.strftime('%Y%m%d_%H%M%S')}.pt"
+
+    # Add .pt extension if not present
+    if not model_name.endswith(".pt"):
+        model_name += ".pt"
+
+    # Save model
+    model_path = os.path.join(model_dir, model_name)
+    print(f"Saving model to {model_path}")
+    torch.save(model.state_dict(), model_path)
+
+
+def setup_logging(log_file):
+    """
+    Set up logging to a file.
+
+    Args:
+        log_file (str): The path to the log file
+    """
+    # Create log directory if it doesn't exist
+    log_dir = os.path.dirname(log_file)
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
+    )
