@@ -797,102 +797,49 @@ def set_seed(seed):
 
 
 def download_and_cache_dataset(
-    dataset_path, use_auth=False, cache_dir="data/cached_datasets"
+    dataset_path, cache_dir="data/cached_datasets", use_auth=False
 ):
     """
-    Download a dataset from Hugging Face and cache it locally.
+    Download and cache a dataset from Hugging Face Hub.
 
     Args:
-        dataset_path (str): Path to the dataset on Hugging Face
-        use_auth (bool): Whether to use authentication
+        dataset_path (str): Path to the dataset on Hugging Face Hub
         cache_dir (str): Directory to cache the dataset
+        use_auth (bool): Whether to use authentication for Hugging Face Hub
 
     Returns:
-        pd.DataFrame: The cached dataset
+        Dataset: The downloaded dataset
     """
     # Create cache directory if it doesn't exist
     os.makedirs(cache_dir, exist_ok=True)
 
-    # Generate a filename for the cached dataset
+    # Create a cache file path
     cache_file = os.path.join(cache_dir, f"{dataset_path.replace('/', '_')}.parquet")
 
     # Check if the dataset is already cached
     if os.path.exists(cache_file):
         print(f"Loading dataset from cache: {cache_file}")
-        try:
-            # Load the cached dataset
-            df = pd.read_parquet(cache_file)
-            print(f"Loaded cached dataset with {len(df)} samples")
-            return df
-        except Exception as e:
-            print(f"Error loading cached dataset: {str(e)}")
-            print("Will download dataset again")
+        dataset = pd.read_parquet(cache_file)
+        print(f"Loaded cached dataset with {len(dataset)} samples")
+        return dataset
 
-    # Download the dataset from Hugging Face
-    print(f"Downloading dataset from Hugging Face: {dataset_path}")
+    # Download the dataset from Hugging Face Hub
+    print(f"Downloading dataset from Hugging Face Hub: {dataset_path}")
     try:
-        # Check if we need to use authentication
-        if use_auth:
-            # Get the Hugging Face token from environment variable
-            token = os.environ.get("HUGGINGFACE_TOKEN")
-            if not token:
-                print("Warning: HUGGINGFACE_TOKEN environment variable not set")
-                print("Attempting to download dataset without authentication")
-                dataset = load_dataset(dataset_path)
-            else:
-                print("Using authentication token for Hugging Face")
-                dataset = load_dataset(dataset_path, token=token)
-        else:
-            dataset = load_dataset(dataset_path)
+        dataset = load_dataset(dataset_path, use_auth_token=use_auth)
 
-        # Convert to pandas DataFrame
-        print("Converting dataset to pandas DataFrame")
-        if isinstance(dataset, dict):
-            # If the dataset has splits, use the 'train' split
-            if "train" in dataset:
-                df = dataset["train"].to_pandas()
-            else:
-                # Otherwise, use the first split
-                first_key = list(dataset.keys())[0]
-                df = dataset[first_key].to_pandas()
+        # Convert to pandas DataFrame and save to cache
+        if isinstance(dataset, dict) and "train" in dataset:
+            df = dataset["train"].to_pandas()
         else:
             df = dataset.to_pandas()
 
-        # Print dataset information
-        print(f"Downloaded dataset with {len(df)} samples")
-        print(f"Dataset columns: {df.columns.tolist()}")
-
-        # Ensure the dataset has the required columns
-        if "Presence" not in df.columns:
-            print("Warning: 'Presence' column not found in dataset")
-            if "label" in df.columns:
-                print("Renaming 'label' column to 'Presence'")
-                df["Presence"] = df["label"]
-
-        # Check for image data
-        image_column = None
-        for col in ["image_base64", "encoded_tile", "image"]:
-            if col in df.columns:
-                image_column = col
-                break
-
-        if image_column is None:
-            print("Warning: No image column found in dataset")
-        else:
-            print(f"Using '{image_column}' as image column")
-            # If the image column is not 'image_base64', rename it
-            if image_column != "image_base64":
-                df["image_base64"] = df[image_column]
-
-        # Save the dataset to cache
         print(f"Saving dataset to cache: {cache_file}")
         df.to_parquet(cache_file)
-
+        print(f"Dataset cached with {len(df)} samples")
         return df
-
     except Exception as e:
         print(f"Error downloading dataset: {str(e)}")
-        traceback.print_exc()
         raise
 
 
