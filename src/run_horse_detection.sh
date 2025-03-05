@@ -40,10 +40,9 @@ pkill -f "python src/horse_detection.py" || echo "No existing process found"
     python src/horse_detection.py \
         --dataset_path $DATASET_PATH \
         --use_auth \
-        --model_type cnn \
-        --cnn_model_type resnet50 \
+        --model_type vit \
         --batch_size 8 \
-        --learning_rate 0.001 \
+        --learning_rate 0.0005 \
         --num_epochs 15 \
         --patience 5 \
         --gradient_accumulation_steps 4 \

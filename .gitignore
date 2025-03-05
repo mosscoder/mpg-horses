@@ -5,6 +5,7 @@ data/raster/tiles/
 data/raster/geotiffs/
 data/processed/
 data/hf
+data/cached_datasets/
 
 models/
 notes/

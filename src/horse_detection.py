@@ -81,6 +81,33 @@ class CNNModel(nn.Module):
         return self.model(x)
 
 
+# Vision Transformer model for horse detection
+class ViTModel(nn.Module):
+    """
+    Vision Transformer model for horse detection.
+    """
+
+    def __init__(self, num_classes=2, pretrained=True):
+        """
+        Initialize the model.
+
+        Args:
+            num_classes (int): Number of output classes
+            pretrained (bool): Whether to use pretrained weights
+        """
+        super(ViTModel, self).__init__()
+
+        # Load a pretrained ViT model
+        self.model = models.vit_b_16(pretrained=pretrained)
+
+        # Replace the final classification head
+        self.model.heads = nn.Linear(self.model.hidden_dim, num_classes)
+
+    def forward(self, x):
+        """Forward pass through the model."""
+        return self.model(x)
+
+
 # Custom dataset class for horse detection
 class HorseDetectionDataset(torch.utils.data.Dataset):
     """
@@ -626,8 +653,8 @@ def parse_args():
         "--model_type",
         type=str,
         default="cnn",
-        choices=["cnn"],
-        help="Type of model to train",
+        choices=["cnn", "vit"],
+        help="Type of model to use (cnn, vit)",
     )
     parser.add_argument(
         "--cnn_model_type",
@@ -950,6 +977,8 @@ def main():
             model = CNNModel(
                 num_classes=2, pretrained=True, model_type=args.cnn_model_type
             )
+        elif args.model_type == "vit":
+            model = ViTModel(num_classes=2, pretrained=True)
         else:
             raise ValueError(f"Unknown model type: {args.model_type}")
 
