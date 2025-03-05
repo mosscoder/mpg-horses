@@ -324,10 +324,18 @@ def create_model(num_classes=2, dropout_rate=0.5):
 
     # Replace the final fully connected layer with dropout for regularization
     num_features = model.fc.in_features
-    model.fc = nn.Sequential(
-        nn.Dropout(dropout_rate),  # Add dropout with specified probability
-        nn.Linear(num_features, num_classes),
-    )
+
+    # For binary classification with BCEWithLogitsLoss, we need a single output
+    if num_classes == 2:
+        model.fc = nn.Sequential(
+            nn.Dropout(dropout_rate),  # Add dropout with specified probability
+            nn.Linear(num_features, 1),  # Single output for binary classification
+        )
+    else:
+        model.fc = nn.Sequential(
+            nn.Dropout(dropout_rate),  # Add dropout with specified probability
+            nn.Linear(num_features, num_classes),
+        )
 
     return model
 
@@ -362,7 +370,9 @@ def train_model(
     model = model.to(device)
 
     # Define loss function and optimizer
-    criterion = nn.CrossEntropyLoss()
+    criterion = (
+        nn.BCEWithLogitsLoss()
+    )  # Binary Cross Entropy with Logits for binary classification
     optimizer = Adam(
         model.parameters(), lr=learning_rate, weight_decay=weight_decay
     )  # Add L2 regularization with weight decay
@@ -538,7 +548,7 @@ def evaluate_model(model, test_loader, device):
     test_total = 0
 
     # Define loss function
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.BCEWithLogitsLoss()
 
     # Create confusion matrix
     all_preds = []
