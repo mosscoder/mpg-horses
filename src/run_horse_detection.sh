@@ -41,12 +41,13 @@ pkill -f "python src/horse_detection.py" || echo "No existing process found"
         --dataset_path $DATASET_PATH \
         --use_auth \
         --model_type cnn \
+        --cnn_model_type resnet50 \
         --batch_size 8 \
-        --learning_rate 0.0001 \
-        --num_epochs 10 \
-        --patience 3 \
+        --learning_rate 0.001 \
+        --num_epochs 15 \
+        --patience 5 \
         --gradient_accumulation_steps 4 \
-        --subset_size 1000 \
+        --subset_size 2000 \
         --cache_dir data/cached_datasets \
         --save_model \
         --plot_history

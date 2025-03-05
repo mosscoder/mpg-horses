@@ -49,20 +49,28 @@ from pytorch_model import set_seed, get_device, save_model
 
 # CNN model for image classification
 class CNNModel(nn.Module):
-    """A CNN model for image classification."""
+    """
+    CNN model for horse detection.
+    """
 
-    def __init__(self, num_classes=2, pretrained=True):
+    def __init__(self, num_classes=2, pretrained=True, model_type="resnet18"):
         """
         Initialize the model.
 
         Args:
             num_classes (int): Number of output classes
             pretrained (bool): Whether to use pretrained weights
+            model_type (str): Type of model to use (resnet18, resnet50)
         """
         super(CNNModel, self).__init__()
 
-        # Load a pretrained ResNet18 model
-        self.model = models.resnet18(pretrained=pretrained)
+        # Select the base model
+        if model_type == "resnet50":
+            # Load a pretrained ResNet50 model
+            self.model = models.resnet50(pretrained=pretrained)
+        else:
+            # Default to ResNet18
+            self.model = models.resnet18(pretrained=pretrained)
 
         # Replace the final fully connected layer
         in_features = self.model.fc.in_features
@@ -240,18 +248,27 @@ def create_image_dataloaders(dataset, batch_size=16, test_size=0.2, random_state
     print(f"Training set size: {len(train_df)}")
     print(f"Testing set size: {len(test_df)}")
 
-    # Create datasets
+    # Create datasets with enhanced data augmentation
     train_dataset = HorseDetectionDataset(
         train_df,
         transform=transforms.Compose(
             [
-                transforms.Resize((224, 224)),
-                transforms.RandomHorizontalFlip(),
-                transforms.RandomRotation(10),
+                transforms.Resize((256, 256)),  # Resize to larger size for cropping
+                transforms.RandomCrop(224),  # Random crop for more variation
+                transforms.RandomHorizontalFlip(p=0.5),
+                transforms.RandomVerticalFlip(p=0.3),  # Add vertical flips
+                transforms.RandomRotation(15),  # Increase rotation range
+                transforms.ColorJitter(
+                    brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1
+                ),  # Add color jitter
+                transforms.RandomAffine(
+                    degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)
+                ),  # Add affine transformations
                 transforms.ToTensor(),
                 transforms.Normalize(
                     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
                 ),
+                transforms.RandomErasing(p=0.2),  # Add random erasing for robustness
             ]
         ),
         debug=False,
@@ -340,6 +357,12 @@ def train_model(
 
     # Set up optimizer and loss function
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+    # Add learning rate scheduler
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", factor=0.5, patience=2, verbose=True
+    )
+
     criterion = nn.CrossEntropyLoss()
 
     # Initialize variables for early stopping
@@ -486,6 +509,9 @@ def train_model(
         val_loss = val_loss / len(test_loader)
         val_acc = 100.0 * val_correct / val_total
 
+        # Update learning rate scheduler
+        scheduler.step(val_loss)
+
         # Print epoch results
         print(
             f"Epoch {epoch+1}/{num_epochs} - "
@@ -602,6 +628,12 @@ def parse_args():
         default="cnn",
         choices=["cnn"],
         help="Type of model to train",
+    )
+    parser.add_argument(
+        "--cnn_model_type",
+        type=str,
+        default="resnet18",
+        help="Type of CNN model to use (resnet18, resnet50)",
     )
     parser.add_argument(
         "--batch_size", type=int, default=16, help="Batch size for training"
@@ -915,7 +947,9 @@ def main():
         # Create model
         print(f"Creating {args.model_type} model")
         if args.model_type == "cnn":
-            model = CNNModel(num_classes=2, pretrained=True)
+            model = CNNModel(
+                num_classes=2, pretrained=True, model_type=args.cnn_model_type
+            )
         else:
             raise ValueError(f"Unknown model type: {args.model_type}")
 
