@@ -672,6 +672,12 @@ def main():
         help="Dropout rate for regularization",
     )
     parser.add_argument(
+        "--grad_clip",
+        type=float,
+        default=1.0,
+        help="Maximum norm for gradient clipping",
+    )
+    parser.add_argument(
         "--save_model", action="store_true", help="Save the trained model"
     )
     parser.add_argument(
@@ -801,13 +807,13 @@ def main():
         history = train_model(
             model,
             train_loader,
-            val_loader,  # Use validation loader instead of test loader
+            val_loader,
             device=get_device(),
             num_epochs=args.num_epochs,
             patience=args.patience,
             learning_rate=args.learning_rate,
             weight_decay=args.weight_decay,
-            grad_clip=1.0,
+            grad_clip=args.grad_clip,
         )
 
         # Evaluate model on test set
