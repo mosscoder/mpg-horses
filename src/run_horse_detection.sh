@@ -21,6 +21,7 @@ python src/horse_detection.py \
   --subset_size 2000 \
   --save_model \
   --plot_history \
+  --progressive_loading \
   2>&1 | tee "$LOG_FILE"
 
 echo "Training complete. Check results in results/figures/" 
