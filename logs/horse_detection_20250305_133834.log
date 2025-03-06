@@ -1,0 +1,641 @@
+/Users/esamsoe/miniforge3/envs/mpg-horses/lib/python3.13/site-packages/torch/optim/lr_scheduler.py:62: UserWarning: The verbose parameter is deprecated. Please use get_last_lr() to access the learning rate.
+  warnings.warn(
+Dataset size: 12780
+Label distribution: {1: np.int64(7100), 0: np.int64(5680)}
+
+===== DATASET INSPECTION =====
+Dataset type: DataFrame with 12780 samples
+
+Columns: ['idx', 'Presence', 'Zone', 'Period', 'Recency', 'datetime_groundtruth', 'datetime_aerialsurvey', 'Latitude', 'Longitude', 'Easting', 'Northing', 'Ellipsoidal_height', 'orthomosaic', 'tile_path', 'observation_offset', 'encoded_tile', '__index_level_0__', 'image_base64']
+
+Potential image columns: ['tile_path', 'encoded_tile', 'image_base64']
+
+Label distribution: {1: 7100, 0: 5680}
+
+Inspecting 3 random samples:
+
+Sample 1 (index 5019):
+  idx: 218
+  Presence: 1
+  Zone: 3
+  Period: 1
+  Recency: 2
+  datetime_groundtruth: 2024-04-25 09:22:16.600000+00:00
+  datetime_aerialsurvey: 2024-08-28 00:00:00
+  Latitude: 46.6777869
+  Longitude: -114.01439119
+  Easting: 728337.6443638945
+  Northing: 5173688.73759217
+  Ellipsoidal_height: 1091.256
+  orthomosaic: 240828_upperpartridge
+  observation_offset: 124
+  __index_level_0__: 5019
+  tile_path: String (length: 59)
+    Starts with: ../data/raster/tiles/240828_up...
+  encoded_tile: Binary data (length: 355978)
+  image_base64: Binary data (length: 355978)
+
+Sample 2 (index 536):
+  idx: 245
+  Presence: 1
+  Zone: 1
+  Period: 1
+  Recency: 1
+  datetime_groundtruth: 2024-04-25 05:44:49+00:00
+  datetime_aerialsurvey: 2024-07-17 00:00:00
+  Latitude: 46.67761618
+  Longitude: -114.00773959
+  Easting: 728847.0495214568
+  Northing: 5173689.091672794
+  Ellipsoidal_height: 1164.085
+  orthomosaic: 240717_upperpartridge
+  observation_offset: 82
+  __index_level_0__: 536
+  tile_path: String (length: 59)
+    Starts with: ../data/raster/tiles/240717_up...
+  encoded_tile: Binary data (length: 371315)
+  image_base64: Binary data (length: 371315)
+
+Sample 3 (index 1421):
+  idx: 355
+  Presence: 1
+  Zone: 1
+  Period: 2
+  Recency: 3
+  datetime_groundtruth: 2024-06-05 05:05:15.800000+00:00
+  datetime_aerialsurvey: 2024-05-06 00:00:00
+  Latitude: 46.67656937
+  Longitude: -114.00901197
+  Easting: 728754.1647223713
+  Northing: 5173569.079598563
+  Ellipsoidal_height: 1142.84
+  orthomosaic: 240506_upperpartridge
+  observation_offset: -31
+  __index_level_0__: 1421
+  tile_path: String (length: 59)
+    Starts with: ../data/raster/tiles/240506_up...
+  encoded_tile: Binary data (length: 358581)
+  image_base64: Binary data (length: 358581)
+
+===== END OF INSPECTION =====
+
+Creating subset of 2000 samples
+Subset size: 2000
+Subset label distribution: {1: np.int64(1000), 0: np.int64(1000)}
+Training dataset size: 1360
+Validation dataset size: 240
+Test dataset size: 400
+Class distribution in training set: {1: 680, 0: 680}
+Using class weight for positive class: 1.0000
+Using 4 workers for data loading
+Model created with 8,927,233 trainable parameters
+Using MPS (Metal Performance Shaders) device
+Training model...
+Memory usage: 1.28GB / 24.00GB (53.3%)
+Epoch 1/25
+Training:   0%|          | 0/22 [00:00<?, ?it/s]Epoch 1/25
+Training:   0%|          | 0/22 [00:11<?, ?it/s, loss=0.693, acc=54.7]Epoch 1/25
+Training:   5%|▍         | 1/22 [00:11<04:01, 11.48s/it, loss=0.693, acc=54.7]Epoch 1/25
+Training:   5%|▍         | 1/22 [00:12<04:01, 11.48s/it, loss=0.699, acc=53.1]Epoch 1/25
+Training:   9%|▉         | 2/22 [00:12<01:47,  5.36s/it, loss=0.699, acc=53.1]Epoch 1/25
+Training:   9%|▉         | 2/22 [00:13<01:47,  5.36s/it, loss=0.696, acc=54.7]Epoch 1/25
+Training:  14%|█▎        | 3/22 [00:13<01:00,  3.20s/it, loss=0.696, acc=54.7]Epoch 1/25
+Training:  14%|█▎        | 3/22 [00:13<01:00,  3.20s/it, loss=0.701, acc=52]  Epoch 1/25
+Training:  18%|█▊        | 4/22 [00:13<00:39,  2.18s/it, loss=0.701, acc=52]Epoch 1/25
+Training:  18%|█▊        | 4/22 [00:14<00:39,  2.18s/it, loss=0.699, acc=52.5]Epoch 1/25
+Training:  23%|██▎       | 5/22 [00:14<00:27,  1.62s/it, loss=0.699, acc=52.5]Epoch 1/25
+Training:  23%|██▎       | 5/22 [00:15<00:27,  1.62s/it, loss=0.697, acc=53.1]Epoch 1/25
+Training:  27%|██▋       | 6/22 [00:15<00:20,  1.27s/it, loss=0.697, acc=53.1]Epoch 1/25
+Training:  27%|██▋       | 6/22 [00:15<00:20,  1.27s/it, loss=0.697, acc=52.9]Epoch 1/25
+Training:  32%|███▏      | 7/22 [00:15<00:15,  1.05s/it, loss=0.697, acc=52.9]Epoch 1/25
+Training:  32%|███▏      | 7/22 [00:16<00:15,  1.05s/it, loss=0.698, acc=52.5]Epoch 1/25
+Training:  36%|███▋      | 8/22 [00:16<00:12,  1.10it/s, loss=0.698, acc=52.5]Epoch 1/25
+Training:  36%|███▋      | 8/22 [00:16<00:12,  1.10it/s, loss=0.699, acc=51.4]Epoch 1/25
+Training:  41%|████      | 9/22 [00:16<00:10,  1.23it/s, loss=0.699, acc=51.4]Epoch 1/25
+Training:  41%|████      | 9/22 [00:17<00:10,  1.23it/s, loss=0.699, acc=50.9]Epoch 1/25
+Training:  45%|████▌     | 10/22 [00:17<00:09,  1.32it/s, loss=0.699, acc=50.9]Epoch 1/25
+Training:  45%|████▌     | 10/22 [00:18<00:09,  1.32it/s, loss=0.7, acc=50.4]  Epoch 1/25
+Training:  50%|█████     | 11/22 [00:18<00:07,  1.40it/s, loss=0.7, acc=50.4]Epoch 1/25
+Training:  50%|█████     | 11/22 [00:18<00:07,  1.40it/s, loss=0.7, acc=50.4]Epoch 1/25
+Training:  55%|█████▍    | 12/22 [00:18<00:06,  1.47it/s, loss=0.7, acc=50.4]Epoch 1/25
+Training:  55%|█████▍    | 12/22 [00:19<00:06,  1.47it/s, loss=0.7, acc=50]  Epoch 1/25
+Training:  59%|█████▉    | 13/22 [00:19<00:06,  1.49it/s, loss=0.7, acc=50]Epoch 1/25
+Training:  59%|█████▉    | 13/22 [00:20<00:06,  1.49it/s, loss=0.699, acc=50.2]Epoch 1/25
+Training:  64%|██████▎   | 14/22 [00:20<00:05,  1.48it/s, loss=0.699, acc=50.2]Epoch 1/25
+Training:  64%|██████▎   | 14/22 [00:20<00:05,  1.48it/s, loss=0.699, acc=50.1]Epoch 1/25
+Training:  68%|██████▊   | 15/22 [00:20<00:04,  1.52it/s, loss=0.699, acc=50.1]Epoch 1/25
+Training:  68%|██████▊   | 15/22 [00:21<00:04,  1.52it/s, loss=0.7, acc=49.3]  Epoch 1/25
+Training:  73%|███████▎  | 16/22 [00:21<00:03,  1.53it/s, loss=0.7, acc=49.3]Epoch 1/25
+Training:  73%|███████▎  | 16/22 [00:21<00:03,  1.53it/s, loss=0.7, acc=49.1]Epoch 1/25
+Training:  77%|███████▋  | 17/22 [00:21<00:03,  1.57it/s, loss=0.7, acc=49.1]Epoch 1/25
+Training:  77%|███████▋  | 17/22 [00:22<00:03,  1.57it/s, loss=0.698, acc=49.9]Epoch 1/25
+Training:  82%|████████▏ | 18/22 [00:22<00:02,  1.59it/s, loss=0.698, acc=49.9]Epoch 1/25
+Training:  82%|████████▏ | 18/22 [00:23<00:02,  1.59it/s, loss=0.698, acc=49.9]Epoch 1/25
+Training:  86%|████████▋ | 19/22 [00:23<00:01,  1.61it/s, loss=0.698, acc=49.9]Epoch 1/25
+Training:  86%|████████▋ | 19/22 [00:23<00:01,  1.61it/s, loss=0.698, acc=49.7]Epoch 1/25
+Training:  91%|█████████ | 20/22 [00:23<00:01,  1.62it/s, loss=0.698, acc=49.7]Epoch 1/25
+Training:  91%|█████████ | 20/22 [00:24<00:01,  1.62it/s, loss=0.699, acc=49.2]Epoch 1/25
+Training:  95%|█████████▌| 21/22 [00:24<00:00,  1.63it/s, loss=0.699, acc=49.2]Epoch 1/25
+Training:  95%|█████████▌| 21/22 [00:24<00:00,  1.63it/s, loss=0.699, acc=49.2]Epoch 1/25
+Training: 100%|██████████| 22/22 [00:24<00:00,  1.94it/s, loss=0.699, acc=49.2]Epoch 1/25
+Training: 100%|██████████| 22/22 [00:44<00:00,  2.03s/it, loss=0.699, acc=49.2]
+Validation:   0%|          | 0/4 [00:00<?, ?it/s]Validation:   0%|          | 0/4 [00:09<?, ?it/s, loss=0.7, acc=45.3]Validation:  25%|██▌       | 1/4 [00:09<00:27,  9.22s/it, loss=0.7, acc=45.3]Validation:  25%|██▌       | 1/4 [00:09<00:27,  9.22s/it, loss=0.697, acc=49.2]Validation:  50%|█████     | 2/4 [00:09<00:08,  4.05s/it, loss=0.697, acc=49.2]Validation:  50%|█████     | 2/4 [00:10<00:08,  4.05s/it, loss=0.698, acc=50]  Validation:  75%|███████▌  | 3/4 [00:10<00:02,  2.40s/it, loss=0.698, acc=50]Validation:  75%|███████▌  | 3/4 [00:10<00:02,  2.40s/it, loss=0.698, acc=50.4]Validation: 100%|██████████| 4/4 [00:10<00:00,  1.59s/it, loss=0.698, acc=50.4]Validation: 100%|██████████| 4/4 [00:30<00:00,  7.61s/it, loss=0.698, acc=50.4]
+Epoch 1/25
+Train Loss: 0.6992, Train Acc: 49.19%
+Val Loss: 0.6980, Val Acc: 50.42%
+Saving best model with validation accuracy: 50.42%
+Memory usage: 0.54GB / 24.00GB (68.2%)
+Epoch 2/25
+Training:   0%|          | 0/22 [00:00<?, ?it/s]Epoch 2/25
+Training:   0%|          | 0/22 [00:12<?, ?it/s, loss=0.699, acc=48.4]Epoch 2/25
+Training:   5%|▍         | 1/22 [00:12<04:25, 12.63s/it, loss=0.699, acc=48.4]Epoch 2/25
+Training:   5%|▍         | 1/22 [00:13<04:25, 12.63s/it, loss=0.695, acc=51.6]Epoch 2/25
+Training:   9%|▉         | 2/22 [00:13<01:51,  5.57s/it, loss=0.695, acc=51.6]Epoch 2/25
+Training:   9%|▉         | 2/22 [00:13<01:51,  5.57s/it, loss=0.703, acc=51.6]Epoch 2/25
+Training:  14%|█▎        | 3/22 [00:13<01:02,  3.31s/it, loss=0.703, acc=51.6]Epoch 2/25
+Training:  14%|█▎        | 3/22 [00:14<01:02,  3.31s/it, loss=0.706, acc=50.4]Epoch 2/25
+Training:  18%|█▊        | 4/22 [00:14<00:40,  2.24s/it, loss=0.706, acc=50.4]Epoch 2/25
+Training:  18%|█▊        | 4/22 [00:15<00:40,  2.24s/it, loss=0.701, acc=50.6]Epoch 2/25
+Training:  23%|██▎       | 5/22 [00:15<00:28,  1.66s/it, loss=0.701, acc=50.6]Epoch 2/25
+Training:  23%|██▎       | 5/22 [00:15<00:28,  1.66s/it, loss=0.7, acc=51.3]  Epoch 2/25
+Training:  27%|██▋       | 6/22 [00:15<00:20,  1.30s/it, loss=0.7, acc=51.3]Epoch 2/25
+Training:  27%|██▋       | 6/22 [00:16<00:20,  1.30s/it, loss=0.699, acc=50.9]Epoch 2/25
+Training:  32%|███▏      | 7/22 [00:16<00:16,  1.07s/it, loss=0.699, acc=50.9]Epoch 2/25
+Training:  32%|███▏      | 7/22 [00:16<00:16,  1.07s/it, loss=0.699, acc=51.4]Epoch 2/25
+Training:  36%|███▋      | 8/22 [00:16<00:12,  1.08it/s, loss=0.699, acc=51.4]Epoch 2/25
+Training:  36%|███▋      | 8/22 [00:17<00:12,  1.08it/s, loss=0.697, acc=51.6]Epoch 2/25
+Training:  41%|████      | 9/22 [00:17<00:10,  1.21it/s, loss=0.697, acc=51.6]Epoch 2/25
+Training:  41%|████      | 9/22 [00:18<00:10,  1.21it/s, loss=0.697, acc=51.7]Epoch 2/25
+Training:  45%|████▌     | 10/22 [00:18<00:09,  1.31it/s, loss=0.697, acc=51.7]Epoch 2/25
+Training:  45%|████▌     | 10/22 [00:18<00:09,  1.31it/s, loss=0.697, acc=52]  Epoch 2/25
+Training:  50%|█████     | 11/22 [00:18<00:07,  1.39it/s, loss=0.697, acc=52]Epoch 2/25
+Training:  50%|█████     | 11/22 [00:19<00:07,  1.39it/s, loss=0.697, acc=52.2]Epoch 2/25
+Training:  55%|█████▍    | 12/22 [00:19<00:06,  1.45it/s, loss=0.697, acc=52.2]Epoch 2/25
+Training:  55%|█████▍    | 12/22 [00:20<00:06,  1.45it/s, loss=0.698, acc=51.9]Epoch 2/25
+Training:  59%|█████▉    | 13/22 [00:20<00:06,  1.50it/s, loss=0.698, acc=51.9]Epoch 2/25
+Training:  59%|█████▉    | 13/22 [00:20<00:06,  1.50it/s, loss=0.698, acc=52.1]Epoch 2/25
+Training:  64%|██████▎   | 14/22 [00:20<00:05,  1.55it/s, loss=0.698, acc=52.1]Epoch 2/25
+Training:  64%|██████▎   | 14/22 [00:21<00:05,  1.55it/s, loss=0.699, acc=51.5]Epoch 2/25
+Training:  68%|██████▊   | 15/22 [00:21<00:04,  1.58it/s, loss=0.699, acc=51.5]Epoch 2/25
+Training:  68%|██████▊   | 15/22 [00:21<00:04,  1.58it/s, loss=0.699, acc=51.8]Epoch 2/25
+Training:  73%|███████▎  | 16/22 [00:21<00:03,  1.61it/s, loss=0.699, acc=51.8]Epoch 2/25
+Training:  73%|███████▎  | 16/22 [00:22<00:03,  1.61it/s, loss=0.698, acc=51.9]Epoch 2/25
+Training:  77%|███████▋  | 17/22 [00:22<00:03,  1.64it/s, loss=0.698, acc=51.9]Epoch 2/25
+Training:  77%|███████▋  | 17/22 [00:23<00:03,  1.64it/s, loss=0.696, acc=52.3]Epoch 2/25
+Training:  82%|████████▏ | 18/22 [00:23<00:02,  1.65it/s, loss=0.696, acc=52.3]Epoch 2/25
+Training:  82%|████████▏ | 18/22 [00:23<00:02,  1.65it/s, loss=0.696, acc=52.5]Epoch 2/25
+Training:  86%|████████▋ | 19/22 [00:23<00:01,  1.66it/s, loss=0.696, acc=52.5]Epoch 2/25
+Training:  86%|████████▋ | 19/22 [00:24<00:01,  1.66it/s, loss=0.696, acc=52.3]Epoch 2/25
+Training:  91%|█████████ | 20/22 [00:24<00:01,  1.67it/s, loss=0.696, acc=52.3]Epoch 2/25
+Training:  91%|█████████ | 20/22 [00:24<00:01,  1.67it/s, loss=0.696, acc=52.5]Epoch 2/25
+Training:  95%|█████████▌| 21/22 [00:24<00:00,  1.68it/s, loss=0.696, acc=52.5]Epoch 2/25
+Training:  95%|█████████▌| 21/22 [00:24<00:00,  1.68it/s, loss=0.696, acc=52.4]Epoch 2/25
+Training: 100%|██████████| 22/22 [00:24<00:00,  2.14it/s, loss=0.696, acc=52.4]Epoch 2/25
+Training: 100%|██████████| 22/22 [00:44<00:00,  2.04s/it, loss=0.696, acc=52.4]
+Validation:   0%|          | 0/4 [00:00<?, ?it/s]Validation:   0%|          | 0/4 [00:08<?, ?it/s, loss=0.685, acc=54.7]Validation:  25%|██▌       | 1/4 [00:08<00:25,  8.37s/it, loss=0.685, acc=54.7]Validation:  25%|██▌       | 1/4 [00:08<00:25,  8.37s/it, loss=0.684, acc=55.5]Validation:  50%|█████     | 2/4 [00:08<00:07,  3.71s/it, loss=0.684, acc=55.5]Validation:  50%|█████     | 2/4 [00:09<00:07,  3.71s/it, loss=0.683, acc=57.3]Validation:  75%|███████▌  | 3/4 [00:09<00:02,  2.21s/it, loss=0.683, acc=57.3]Validation:  75%|███████▌  | 3/4 [00:09<00:02,  2.21s/it, loss=0.681, acc=58.3]Validation: 100%|██████████| 4/4 [00:09<00:00,  1.47s/it, loss=0.681, acc=58.3]Validation: 100%|██████████| 4/4 [00:29<00:00,  7.39s/it, loss=0.681, acc=58.3]
+Epoch 2/25
+Train Loss: 0.6961, Train Acc: 52.35%
+Val Loss: 0.6806, Val Acc: 58.33%
+Saving best model with validation accuracy: 58.33%
+Memory usage: 0.55GB / 24.00GB (63.1%)
+Epoch 3/25
+Training:   0%|          | 0/22 [00:00<?, ?it/s]Epoch 3/25
+Training:   0%|          | 0/22 [00:10<?, ?it/s, loss=0.673, acc=59.4]Epoch 3/25
+Training:   5%|▍         | 1/22 [00:10<03:45, 10.74s/it, loss=0.673, acc=59.4]Epoch 3/25
+Training:   5%|▍         | 1/22 [00:11<03:45, 10.74s/it, loss=0.686, acc=57]  Epoch 3/25
+Training:   9%|▉         | 2/22 [00:11<01:35,  4.80s/it, loss=0.686, acc=57]Epoch 3/25
+Training:   9%|▉         | 2/22 [00:11<01:35,  4.80s/it, loss=0.68, acc=57.8]Epoch 3/25
+Training:  14%|█▎        | 3/22 [00:11<00:54,  2.88s/it, loss=0.68, acc=57.8]Epoch 3/25
+Training:  14%|█▎        | 3/22 [00:12<00:54,  2.88s/it, loss=0.677, acc=60.2]Epoch 3/25
+Training:  18%|█▊        | 4/22 [00:12<00:35,  1.98s/it, loss=0.677, acc=60.2]Epoch 3/25
+Training:  18%|█▊        | 4/22 [00:13<00:35,  1.98s/it, loss=0.679, acc=58.1]Epoch 3/25
+Training:  23%|██▎       | 5/22 [00:13<00:25,  1.49s/it, loss=0.679, acc=58.1]Epoch 3/25
+Training:  23%|██▎       | 5/22 [00:13<00:25,  1.49s/it, loss=0.681, acc=57.6]Epoch 3/25
+Training:  27%|██▋       | 6/22 [00:13<00:18,  1.19s/it, loss=0.681, acc=57.6]Epoch 3/25
+Training:  27%|██▋       | 6/22 [00:14<00:18,  1.19s/it, loss=0.682, acc=57.1]Epoch 3/25
+Training:  32%|███▏      | 7/22 [00:14<00:14,  1.01it/s, loss=0.682, acc=57.1]Epoch 3/25
+Training:  32%|███▏      | 7/22 [00:14<00:14,  1.01it/s, loss=0.684, acc=56.1]Epoch 3/25
+Training:  36%|███▋      | 8/22 [00:14<00:12,  1.16it/s, loss=0.684, acc=56.1]Epoch 3/25
+Training:  36%|███▋      | 8/22 [00:15<00:12,  1.16it/s, loss=0.684, acc=56.4]Epoch 3/25
+Training:  41%|████      | 9/22 [00:15<00:10,  1.29it/s, loss=0.684, acc=56.4]Epoch 3/25
+Training:  41%|████      | 9/22 [00:16<00:10,  1.29it/s, loss=0.684, acc=56.2]Epoch 3/25
+Training:  45%|████▌     | 10/22 [00:16<00:08,  1.40it/s, loss=0.684, acc=56.2]Epoch 3/25
+Training:  45%|████▌     | 10/22 [00:16<00:08,  1.40it/s, loss=0.684, acc=55.5]Epoch 3/25
+Training:  50%|█████     | 11/22 [00:16<00:07,  1.47it/s, loss=0.684, acc=55.5]Epoch 3/25
+Training:  50%|█████     | 11/22 [00:17<00:07,  1.47it/s, loss=0.683, acc=55.6]Epoch 3/25
+Training:  55%|█████▍    | 12/22 [00:17<00:06,  1.53it/s, loss=0.683, acc=55.6]Epoch 3/25
+Training:  55%|█████▍    | 12/22 [00:17<00:06,  1.53it/s, loss=0.684, acc=55.4]Epoch 3/25
+Training:  59%|█████▉    | 13/22 [00:17<00:05,  1.58it/s, loss=0.684, acc=55.4]Epoch 3/25
+Training:  59%|█████▉    | 13/22 [00:18<00:05,  1.58it/s, loss=0.687, acc=54.2]Epoch 3/25
+Training:  64%|██████▎   | 14/22 [00:18<00:04,  1.62it/s, loss=0.687, acc=54.2]Epoch 3/25
+Training:  64%|██████▎   | 14/22 [00:19<00:04,  1.62it/s, loss=0.687, acc=53.9]Epoch 3/25
+Training:  68%|██████▊   | 15/22 [00:19<00:04,  1.65it/s, loss=0.687, acc=53.9]Epoch 3/25
+Training:  68%|██████▊   | 15/22 [00:19<00:04,  1.65it/s, loss=0.687, acc=54.1]Epoch 3/25
+Training:  73%|███████▎  | 16/22 [00:19<00:03,  1.67it/s, loss=0.687, acc=54.1]Epoch 3/25
+Training:  73%|███████▎  | 16/22 [00:20<00:03,  1.67it/s, loss=0.687, acc=54.3]Epoch 3/25
+Training:  77%|███████▋  | 17/22 [00:20<00:02,  1.69it/s, loss=0.687, acc=54.3]Epoch 3/25
+Training:  77%|███████▋  | 17/22 [00:20<00:02,  1.69it/s, loss=0.688, acc=53.7]Epoch 3/25
+Training:  82%|████████▏ | 18/22 [00:20<00:02,  1.70it/s, loss=0.688, acc=53.7]Epoch 3/25
+Training:  82%|████████▏ | 18/22 [00:21<00:02,  1.70it/s, loss=0.687, acc=53.7]Epoch 3/25
+Training:  86%|████████▋ | 19/22 [00:21<00:01,  1.71it/s, loss=0.687, acc=53.7]Epoch 3/25
+Training:  86%|████████▋ | 19/22 [00:21<00:01,  1.71it/s, loss=0.688, acc=53.6]Epoch 3/25
+Training:  91%|█████████ | 20/22 [00:21<00:01,  1.71it/s, loss=0.688, acc=53.6]Epoch 3/25
+Training:  91%|█████████ | 20/22 [00:22<00:01,  1.71it/s, loss=0.688, acc=53.6]Epoch 3/25
+Training:  95%|█████████▌| 21/22 [00:22<00:00,  1.72it/s, loss=0.688, acc=53.6]Epoch 3/25
+Training:  95%|█████████▌| 21/22 [00:22<00:00,  1.72it/s, loss=0.688, acc=53.5]Epoch 3/25
+Training: 100%|██████████| 22/22 [00:22<00:00,  2.19it/s, loss=0.688, acc=53.5]Epoch 3/25
+Training: 100%|██████████| 22/22 [00:42<00:00,  1.94s/it, loss=0.688, acc=53.5]
+Validation:   0%|          | 0/4 [00:00<?, ?it/s]Validation:   0%|          | 0/4 [00:08<?, ?it/s, loss=0.699, acc=54.7]Validation:  25%|██▌       | 1/4 [00:08<00:25,  8.58s/it, loss=0.699, acc=54.7]Validation:  25%|██▌       | 1/4 [00:09<00:25,  8.58s/it, loss=0.685, acc=54.7]Validation:  50%|█████     | 2/4 [00:09<00:07,  3.79s/it, loss=0.685, acc=54.7]Validation:  50%|█████     | 2/4 [00:09<00:07,  3.79s/it, loss=0.682, acc=57.3]Validation:  75%|███████▌  | 3/4 [00:09<00:02,  2.25s/it, loss=0.682, acc=57.3]Validation:  75%|███████▌  | 3/4 [00:09<00:02,  2.25s/it, loss=0.68, acc=58.3] Validation: 100%|██████████| 4/4 [00:09<00:00,  1.49s/it, loss=0.68, acc=58.3]Validation: 100%|██████████| 4/4 [00:29<00:00,  7.44s/it, loss=0.68, acc=58.3]
+Epoch 3/25
+Train Loss: 0.6876, Train Acc: 53.46%
+Val Loss: 0.6797, Val Acc: 58.33%
+Memory usage: 0.64GB / 24.00GB (56.1%)
+Epoch 4/25
+Training:   0%|          | 0/22 [00:00<?, ?it/s]Epoch 4/25
+Training:   0%|          | 0/22 [00:11<?, ?it/s, loss=0.683, acc=60.9]Epoch 4/25
+Training:   5%|▍         | 1/22 [00:11<03:59, 11.41s/it, loss=0.683, acc=60.9]Epoch 4/25
+Training:   5%|▍         | 1/22 [00:12<03:59, 11.41s/it, loss=0.683, acc=58.6]Epoch 4/25
+Training:   9%|▉         | 2/22 [00:12<01:41,  5.07s/it, loss=0.683, acc=58.6]Epoch 4/25
+Training:   9%|▉         | 2/22 [00:12<01:41,  5.07s/it, loss=0.683, acc=57.3]Epoch 4/25
+Training:  14%|█▎        | 3/22 [00:12<00:57,  3.02s/it, loss=0.683, acc=57.3]Epoch 4/25
+Training:  14%|█▎        | 3/22 [00:13<00:57,  3.02s/it, loss=0.685, acc=54.3]Epoch 4/25
+Training:  18%|█▊        | 4/22 [00:13<00:37,  2.07s/it, loss=0.685, acc=54.3]Epoch 4/25
+Training:  18%|█▊        | 4/22 [00:13<00:37,  2.07s/it, loss=0.682, acc=54.4]Epoch 4/25
+Training:  23%|██▎       | 5/22 [00:13<00:26,  1.53s/it, loss=0.682, acc=54.4]Epoch 4/25
+Training:  23%|██▎       | 5/22 [00:14<00:26,  1.53s/it, loss=0.686, acc=53.4]Epoch 4/25
+Training:  27%|██▋       | 6/22 [00:14<00:19,  1.21s/it, loss=0.686, acc=53.4]Epoch 4/25
+Training:  27%|██▋       | 6/22 [00:14<00:19,  1.21s/it, loss=0.686, acc=53.3]Epoch 4/25
+Training:  32%|███▏      | 7/22 [00:14<00:15,  1.00s/it, loss=0.686, acc=53.3]Epoch 4/25
+Training:  32%|███▏      | 7/22 [00:15<00:15,  1.00s/it, loss=0.684, acc=52.9]Epoch 4/25
+Training:  36%|███▋      | 8/22 [00:15<00:12,  1.15it/s, loss=0.684, acc=52.9]Epoch 4/25
+Training:  36%|███▋      | 8/22 [00:16<00:12,  1.15it/s, loss=0.684, acc=53.3]Epoch 4/25
+Training:  41%|████      | 9/22 [00:16<00:10,  1.28it/s, loss=0.684, acc=53.3]Epoch 4/25
+Training:  41%|████      | 9/22 [00:16<00:10,  1.28it/s, loss=0.683, acc=54.2]Epoch 4/25
+Training:  45%|████▌     | 10/22 [00:16<00:08,  1.39it/s, loss=0.683, acc=54.2]Epoch 4/25
+Training:  45%|████▌     | 10/22 [00:17<00:08,  1.39it/s, loss=0.679, acc=55.5]Epoch 4/25
+Training:  50%|█████     | 11/22 [00:17<00:07,  1.47it/s, loss=0.679, acc=55.5]Epoch 4/25
+Training:  50%|█████     | 11/22 [00:17<00:07,  1.47it/s, loss=0.681, acc=55.2]Epoch 4/25
+Training:  55%|█████▍    | 12/22 [00:17<00:06,  1.53it/s, loss=0.681, acc=55.2]Epoch 4/25
+Training:  55%|█████▍    | 12/22 [00:18<00:06,  1.53it/s, loss=0.682, acc=55.6]Epoch 4/25
+Training:  59%|█████▉    | 13/22 [00:18<00:05,  1.53it/s, loss=0.682, acc=55.6]Epoch 4/25
+Training:  59%|█████▉    | 13/22 [00:19<00:05,  1.53it/s, loss=0.681, acc=55.6]Epoch 4/25
+Training:  64%|██████▎   | 14/22 [00:19<00:05,  1.49it/s, loss=0.681, acc=55.6]Epoch 4/25
+Training:  64%|██████▎   | 14/22 [00:19<00:05,  1.49it/s, loss=0.681, acc=55.8]Epoch 4/25
+Training:  68%|██████▊   | 15/22 [00:19<00:04,  1.54it/s, loss=0.681, acc=55.8]Epoch 4/25
+Training:  68%|██████▊   | 15/22 [00:20<00:04,  1.54it/s, loss=0.683, acc=55.9]Epoch 4/25
+Training:  73%|███████▎  | 16/22 [00:20<00:03,  1.59it/s, loss=0.683, acc=55.9]Epoch 4/25
+Training:  73%|███████▎  | 16/22 [00:21<00:03,  1.59it/s, loss=0.682, acc=55.9]Epoch 4/25
+Training:  77%|███████▋  | 17/22 [00:21<00:03,  1.62it/s, loss=0.682, acc=55.9]Epoch 4/25
+Training:  77%|███████▋  | 17/22 [00:21<00:03,  1.62it/s, loss=0.68, acc=56.2] Epoch 4/25
+Training:  82%|████████▏ | 18/22 [00:21<00:02,  1.63it/s, loss=0.68, acc=56.2]Epoch 4/25
+Training:  82%|████████▏ | 18/22 [00:22<00:02,  1.63it/s, loss=0.679, acc=56.6]Epoch 4/25
+Training:  86%|████████▋ | 19/22 [00:22<00:01,  1.65it/s, loss=0.679, acc=56.6]Epoch 4/25
+Training:  86%|████████▋ | 19/22 [00:22<00:01,  1.65it/s, loss=0.679, acc=56.9]Epoch 4/25
+Training:  91%|█████████ | 20/22 [00:22<00:01,  1.67it/s, loss=0.679, acc=56.9]Epoch 4/25
+Training:  91%|█████████ | 20/22 [00:23<00:01,  1.67it/s, loss=0.68, acc=56.8] Epoch 4/25
+Training:  95%|█████████▌| 21/22 [00:23<00:00,  1.66it/s, loss=0.68, acc=56.8]Epoch 4/25
+Training:  95%|█████████▌| 21/22 [00:23<00:00,  1.66it/s, loss=0.68, acc=56.5]Epoch 4/25
+Training: 100%|██████████| 22/22 [00:23<00:00,  2.11it/s, loss=0.68, acc=56.5]Epoch 4/25
+Training: 100%|██████████| 22/22 [00:43<00:00,  1.98s/it, loss=0.68, acc=56.5]
+Validation:   0%|          | 0/4 [00:00<?, ?it/s]Validation:   0%|          | 0/4 [00:09<?, ?it/s, loss=0.709, acc=46.9]Validation:  25%|██▌       | 1/4 [00:09<00:28,  9.51s/it, loss=0.709, acc=46.9]Validation:  25%|██▌       | 1/4 [00:09<00:28,  9.51s/it, loss=0.683, acc=50.8]Validation:  50%|█████     | 2/4 [00:09<00:08,  4.17s/it, loss=0.683, acc=50.8]Validation:  50%|█████     | 2/4 [00:10<00:08,  4.17s/it, loss=0.679, acc=53.1]Validation:  75%|███████▌  | 3/4 [00:10<00:02,  2.47s/it, loss=0.679, acc=53.1]Validation:  75%|███████▌  | 3/4 [00:10<00:02,  2.47s/it, loss=0.674, acc=55.8]Validation: 100%|██████████| 4/4 [00:10<00:00,  1.62s/it, loss=0.674, acc=55.8]Validation: 100%|██████████| 4/4 [00:30<00:00,  7.68s/it, loss=0.674, acc=55.8]
+Epoch 4/25
+Train Loss: 0.6804, Train Acc: 56.47%
+Val Loss: 0.6743, Val Acc: 55.83%
+Memory usage: 0.41GB / 24.00GB (55.6%)
+Epoch 5/25
+Training:   0%|          | 0/22 [00:00<?, ?it/s]Epoch 5/25
+Training:   0%|          | 0/22 [00:11<?, ?it/s, loss=0.679, acc=54.7]Epoch 5/25
+Training:   5%|▍         | 1/22 [00:11<03:53, 11.13s/it, loss=0.679, acc=54.7]Epoch 5/25
+Training:   5%|▍         | 1/22 [00:11<03:53, 11.13s/it, loss=0.685, acc=59.4]Epoch 5/25
+Training:   9%|▉         | 2/22 [00:11<01:38,  4.93s/it, loss=0.685, acc=59.4]Epoch 5/25
+Training:   9%|▉         | 2/22 [00:12<01:38,  4.93s/it, loss=0.678, acc=63]  Epoch 5/25
+Training:  14%|█▎        | 3/22 [00:12<00:56,  2.95s/it, loss=0.678, acc=63]Epoch 5/25
+Training:  14%|█▎        | 3/22 [00:12<00:56,  2.95s/it, loss=0.683, acc=60.2]Epoch 5/25
+Training:  18%|█▊        | 4/22 [00:12<00:36,  2.01s/it, loss=0.683, acc=60.2]Epoch 5/25
+Training:  18%|█▊        | 4/22 [00:13<00:36,  2.01s/it, loss=0.683, acc=58.8]Epoch 5/25
+Training:  23%|██▎       | 5/22 [00:13<00:25,  1.50s/it, loss=0.683, acc=58.8]Epoch 5/25
+Training:  23%|██▎       | 5/22 [00:14<00:25,  1.50s/it, loss=0.679, acc=58.9]Epoch 5/25
+Training:  27%|██▋       | 6/22 [00:14<00:18,  1.18s/it, loss=0.679, acc=58.9]Epoch 5/25
+Training:  27%|██▋       | 6/22 [00:14<00:18,  1.18s/it, loss=0.679, acc=58.5]Epoch 5/25
+Training:  32%|███▏      | 7/22 [00:14<00:14,  1.01it/s, loss=0.679, acc=58.5]Epoch 5/25
+Training:  32%|███▏      | 7/22 [00:15<00:14,  1.01it/s, loss=0.675, acc=59.4]Epoch 5/25
+Training:  36%|███▋      | 8/22 [00:15<00:12,  1.16it/s, loss=0.675, acc=59.4]Epoch 5/25
+Training:  36%|███▋      | 8/22 [00:15<00:12,  1.16it/s, loss=0.673, acc=59.7]Epoch 5/25
+Training:  41%|████      | 9/22 [00:15<00:10,  1.29it/s, loss=0.673, acc=59.7]Epoch 5/25
+Training:  41%|████      | 9/22 [00:16<00:10,  1.29it/s, loss=0.672, acc=59.5]Epoch 5/25
+Training:  45%|████▌     | 10/22 [00:16<00:08,  1.40it/s, loss=0.672, acc=59.5]Epoch 5/25
+Training:  45%|████▌     | 10/22 [00:16<00:08,  1.40it/s, loss=0.674, acc=58.7]Epoch 5/25
+Training:  50%|█████     | 11/22 [00:16<00:07,  1.48it/s, loss=0.674, acc=58.7]Epoch 5/25
+Training:  50%|█████     | 11/22 [00:17<00:07,  1.48it/s, loss=0.671, acc=58.9]Epoch 5/25
+Training:  55%|█████▍    | 12/22 [00:17<00:06,  1.50it/s, loss=0.671, acc=58.9]Epoch 5/25
+Training:  55%|█████▍    | 12/22 [00:18<00:06,  1.50it/s, loss=0.67, acc=59.1] Epoch 5/25
+Training:  59%|█████▉    | 13/22 [00:18<00:05,  1.55it/s, loss=0.67, acc=59.1]Epoch 5/25
+Training:  59%|█████▉    | 13/22 [00:18<00:05,  1.55it/s, loss=0.67, acc=58.8]Epoch 5/25
+Training:  64%|██████▎   | 14/22 [00:18<00:05,  1.60it/s, loss=0.67, acc=58.8]Epoch 5/25
+Training:  64%|██████▎   | 14/22 [00:19<00:05,  1.60it/s, loss=0.673, acc=58.1]Epoch 5/25
+Training:  68%|██████▊   | 15/22 [00:19<00:04,  1.63it/s, loss=0.673, acc=58.1]Epoch 5/25
+Training:  68%|██████▊   | 15/22 [00:19<00:04,  1.63it/s, loss=0.672, acc=58.1]Epoch 5/25
+Training:  73%|███████▎  | 16/22 [00:19<00:03,  1.66it/s, loss=0.672, acc=58.1]Epoch 5/25
+Training:  73%|███████▎  | 16/22 [00:20<00:03,  1.66it/s, loss=0.672, acc=58.3]Epoch 5/25
+Training:  77%|███████▋  | 17/22 [00:20<00:02,  1.68it/s, loss=0.672, acc=58.3]Epoch 5/25
+Training:  77%|███████▋  | 17/22 [00:21<00:02,  1.68it/s, loss=0.673, acc=58.6]Epoch 5/25
+Training:  82%|████████▏ | 18/22 [00:21<00:02,  1.69it/s, loss=0.673, acc=58.6]Epoch 5/25
+Training:  82%|████████▏ | 18/22 [00:21<00:02,  1.69it/s, loss=0.674, acc=58.5]Epoch 5/25
+Training:  86%|████████▋ | 19/22 [00:21<00:01,  1.70it/s, loss=0.674, acc=58.5]Epoch 5/25
+Training:  86%|████████▋ | 19/22 [00:22<00:01,  1.70it/s, loss=0.674, acc=58.4]Epoch 5/25
+Training:  91%|█████████ | 20/22 [00:22<00:01,  1.70it/s, loss=0.674, acc=58.4]Epoch 5/25
+Training:  91%|█████████ | 20/22 [00:22<00:01,  1.70it/s, loss=0.673, acc=58.4]Epoch 5/25
+Training:  95%|█████████▌| 21/22 [00:22<00:00,  1.70it/s, loss=0.673, acc=58.4]Epoch 5/25
+Training:  95%|█████████▌| 21/22 [00:23<00:00,  1.70it/s, loss=0.672, acc=58.7]Epoch 5/25
+Training: 100%|██████████| 22/22 [00:23<00:00,  2.17it/s, loss=0.672, acc=58.7]Epoch 5/25
+Training: 100%|██████████| 22/22 [00:43<00:00,  1.96s/it, loss=0.672, acc=58.7]
+Validation:   0%|          | 0/4 [00:00<?, ?it/s]Validation:   0%|          | 0/4 [00:08<?, ?it/s, loss=0.72, acc=53.1]Validation:  25%|██▌       | 1/4 [00:08<00:26,  8.76s/it, loss=0.72, acc=53.1]Validation:  25%|██▌       | 1/4 [00:09<00:26,  8.76s/it, loss=0.687, acc=57.8]Validation:  50%|█████     | 2/4 [00:09<00:07,  3.87s/it, loss=0.687, acc=57.8]Validation:  50%|█████     | 2/4 [00:09<00:07,  3.87s/it, loss=0.677, acc=57.3]Validation:  75%|███████▌  | 3/4 [00:09<00:02,  2.30s/it, loss=0.677, acc=57.3]Validation:  75%|███████▌  | 3/4 [00:09<00:02,  2.30s/it, loss=0.67, acc=57.1] Validation: 100%|██████████| 4/4 [00:09<00:00,  1.52s/it, loss=0.67, acc=57.1]Validation: 100%|██████████| 4/4 [00:29<00:00,  7.49s/it, loss=0.67, acc=57.1]
+Epoch 5/25
+Train Loss: 0.6718, Train Acc: 58.68%
+Val Loss: 0.6703, Val Acc: 57.08%
+Memory usage: 1.39GB / 24.00GB (55.6%)
+Epoch 6/25
+Training:   0%|          | 0/22 [00:00<?, ?it/s]Epoch 6/25
+Training:   0%|          | 0/22 [00:10<?, ?it/s, loss=0.643, acc=57.8]Epoch 6/25
+Training:   5%|▍         | 1/22 [00:10<03:43, 10.62s/it, loss=0.643, acc=57.8]Epoch 6/25
+Training:   5%|▍         | 1/22 [00:11<03:43, 10.62s/it, loss=0.65, acc=59.4] Epoch 6/25
+Training:   9%|▉         | 2/22 [00:11<01:34,  4.73s/it, loss=0.65, acc=59.4]Epoch 6/25
+Training:   9%|▉         | 2/22 [00:11<01:34,  4.73s/it, loss=0.651, acc=58.3]Epoch 6/25
+Training:  14%|█▎        | 3/22 [00:11<00:53,  2.83s/it, loss=0.651, acc=58.3]Epoch 6/25
+Training:  14%|█▎        | 3/22 [00:12<00:53,  2.83s/it, loss=0.665, acc=54.7]Epoch 6/25
+Training:  18%|█▊        | 4/22 [00:12<00:34,  1.94s/it, loss=0.665, acc=54.7]Epoch 6/25
+Training:  18%|█▊        | 4/22 [00:12<00:34,  1.94s/it, loss=0.669, acc=56.6]Epoch 6/25
+Training:  23%|██▎       | 5/22 [00:12<00:24,  1.45s/it, loss=0.669, acc=56.6]Epoch 6/25
+Training:  23%|██▎       | 5/22 [00:13<00:24,  1.45s/it, loss=0.673, acc=55.2]Epoch 6/25
+Training:  27%|██▋       | 6/22 [00:13<00:18,  1.16s/it, loss=0.673, acc=55.2]Epoch 6/25
+Training:  27%|██▋       | 6/22 [00:14<00:18,  1.16s/it, loss=0.666, acc=56.5]Epoch 6/25
+Training:  32%|███▏      | 7/22 [00:14<00:14,  1.03it/s, loss=0.666, acc=56.5]Epoch 6/25
+Training:  32%|███▏      | 7/22 [00:14<00:14,  1.03it/s, loss=0.672, acc=55.7]Epoch 6/25
+Training:  36%|███▋      | 8/22 [00:14<00:11,  1.19it/s, loss=0.672, acc=55.7]Epoch 6/25
+Training:  36%|███▋      | 8/22 [00:15<00:11,  1.19it/s, loss=0.671, acc=55.7]Epoch 6/25
+Training:  41%|████      | 9/22 [00:15<00:09,  1.31it/s, loss=0.671, acc=55.7]Epoch 6/25
+Training:  41%|████      | 9/22 [00:15<00:09,  1.31it/s, loss=0.673, acc=55.6]Epoch 6/25
+Training:  45%|████▌     | 10/22 [00:15<00:08,  1.42it/s, loss=0.673, acc=55.6]Epoch 6/25
+Training:  45%|████▌     | 10/22 [00:16<00:08,  1.42it/s, loss=0.674, acc=56]  Epoch 6/25
+Training:  50%|█████     | 11/22 [00:16<00:07,  1.48it/s, loss=0.674, acc=56]Epoch 6/25
+Training:  50%|█████     | 11/22 [00:17<00:07,  1.48it/s, loss=0.673, acc=56]Epoch 6/25
+Training:  55%|█████▍    | 12/22 [00:17<00:06,  1.55it/s, loss=0.673, acc=56]Epoch 6/25
+Training:  55%|█████▍    | 12/22 [00:17<00:06,  1.55it/s, loss=0.674, acc=56.1]Epoch 6/25
+Training:  59%|█████▉    | 13/22 [00:17<00:05,  1.59it/s, loss=0.674, acc=56.1]Epoch 6/25
+Training:  59%|█████▉    | 13/22 [00:18<00:05,  1.59it/s, loss=0.673, acc=56.4]Epoch 6/25
+Training:  64%|██████▎   | 14/22 [00:18<00:04,  1.62it/s, loss=0.673, acc=56.4]Epoch 6/25
+Training:  64%|██████▎   | 14/22 [00:18<00:04,  1.62it/s, loss=0.674, acc=56.2]Epoch 6/25
+Training:  68%|██████▊   | 15/22 [00:18<00:04,  1.66it/s, loss=0.674, acc=56.2]Epoch 6/25
+Training:  68%|██████▊   | 15/22 [00:19<00:04,  1.66it/s, loss=0.673, acc=56.8]Epoch 6/25
+Training:  73%|███████▎  | 16/22 [00:19<00:03,  1.68it/s, loss=0.673, acc=56.8]Epoch 6/25
+Training:  73%|███████▎  | 16/22 [00:19<00:03,  1.68it/s, loss=0.672, acc=57.3]Epoch 6/25
+Training:  77%|███████▋  | 17/22 [00:19<00:02,  1.69it/s, loss=0.672, acc=57.3]Epoch 6/25
+Training:  77%|███████▋  | 17/22 [00:20<00:02,  1.69it/s, loss=0.672, acc=57.2]Epoch 6/25
+Training:  82%|████████▏ | 18/22 [00:20<00:02,  1.70it/s, loss=0.672, acc=57.2]Epoch 6/25
+Training:  82%|████████▏ | 18/22 [00:21<00:02,  1.70it/s, loss=0.671, acc=57.7]Epoch 6/25
+Training:  86%|████████▋ | 19/22 [00:21<00:01,  1.70it/s, loss=0.671, acc=57.7]Epoch 6/25
+Training:  86%|████████▋ | 19/22 [00:21<00:01,  1.70it/s, loss=0.671, acc=57.5]Epoch 6/25
+Training:  91%|█████████ | 20/22 [00:21<00:01,  1.70it/s, loss=0.671, acc=57.5]Epoch 6/25
+Training:  91%|█████████ | 20/22 [00:22<00:01,  1.70it/s, loss=0.67, acc=58]   Epoch 6/25
+Training:  95%|█████████▌| 21/22 [00:22<00:00,  1.70it/s, loss=0.67, acc=58]Epoch 6/25
+Training:  95%|█████████▌| 21/22 [00:22<00:00,  1.70it/s, loss=0.671, acc=57.9]Epoch 6/25
+Training: 100%|██████████| 22/22 [00:22<00:00,  2.17it/s, loss=0.671, acc=57.9]Epoch 6/25
+Training: 100%|██████████| 22/22 [00:42<00:00,  1.93s/it, loss=0.671, acc=57.9]
+Validation:   0%|          | 0/4 [00:00<?, ?it/s]Validation:   0%|          | 0/4 [00:08<?, ?it/s, loss=0.674, acc=56.2]Validation:  25%|██▌       | 1/4 [00:08<00:25,  8.36s/it, loss=0.674, acc=56.2]Validation:  25%|██▌       | 1/4 [00:08<00:25,  8.36s/it, loss=0.677, acc=53.9]Validation:  50%|█████     | 2/4 [00:08<00:07,  3.70s/it, loss=0.677, acc=53.9]Validation:  50%|█████     | 2/4 [00:09<00:07,  3.70s/it, loss=0.679, acc=55.7]Validation:  75%|███████▌  | 3/4 [00:09<00:02,  2.21s/it, loss=0.679, acc=55.7]Validation:  75%|███████▌  | 3/4 [00:09<00:02,  2.21s/it, loss=0.672, acc=57.1]Validation: 100%|██████████| 4/4 [00:09<00:00,  1.46s/it, loss=0.672, acc=57.1]Validation: 100%|██████████| 4/4 [00:29<00:00,  7.39s/it, loss=0.672, acc=57.1]
+Epoch 6/25
+Train Loss: 0.6708, Train Acc: 57.94%
+Val Loss: 0.6716, Val Acc: 57.08%
+Memory usage: 1.38GB / 24.00GB (56.7%)
+Epoch 7/25
+Training:   0%|          | 0/22 [00:00<?, ?it/s]Epoch 7/25
+Training:   0%|          | 0/22 [00:13<?, ?it/s, loss=0.677, acc=64.1]Epoch 7/25
+Training:   5%|▍         | 1/22 [00:13<04:47, 13.68s/it, loss=0.677, acc=64.1]Epoch 7/25
+Training:   5%|▍         | 1/22 [00:14<04:47, 13.68s/it, loss=0.688, acc=57.8]Epoch 7/25
+Training:   9%|▉         | 2/22 [00:14<02:00,  6.02s/it, loss=0.688, acc=57.8]Epoch 7/25
+Training:   9%|▉         | 2/22 [00:14<02:00,  6.02s/it, loss=0.679, acc=58.3]Epoch 7/25
+Training:  14%|█▎        | 3/22 [00:14<01:07,  3.56s/it, loss=0.679, acc=58.3]Epoch 7/25
+Training:  14%|█▎        | 3/22 [00:15<01:07,  3.56s/it, loss=0.69, acc=56.2] Epoch 7/25
+Training:  18%|█▊        | 4/22 [00:15<00:43,  2.40s/it, loss=0.69, acc=56.2]Epoch 7/25
+Training:  18%|█▊        | 4/22 [00:16<00:43,  2.40s/it, loss=0.69, acc=56.9]Epoch 7/25
+Training:  23%|██▎       | 5/22 [00:16<00:29,  1.75s/it, loss=0.69, acc=56.9]Epoch 7/25
+Training:  23%|██▎       | 5/22 [00:16<00:29,  1.75s/it, loss=0.688, acc=57.8]Epoch 7/25
+Training:  27%|██▋       | 6/22 [00:16<00:21,  1.37s/it, loss=0.688, acc=57.8]Epoch 7/25
+Training:  27%|██▋       | 6/22 [00:17<00:21,  1.37s/it, loss=0.693, acc=56.9]Epoch 7/25
+Training:  32%|███▏      | 7/22 [00:17<00:17,  1.18s/it, loss=0.693, acc=56.9]Epoch 7/25
+Training:  32%|███▏      | 7/22 [00:18<00:17,  1.18s/it, loss=0.693, acc=57]  Epoch 7/25
+Training:  36%|███▋      | 8/22 [00:18<00:14,  1.01s/it, loss=0.693, acc=57]Epoch 7/25
+Training:  36%|███▋      | 8/22 [00:18<00:14,  1.01s/it, loss=0.691, acc=57.6]Epoch 7/25
+Training:  41%|████      | 9/22 [00:18<00:11,  1.10it/s, loss=0.691, acc=57.6]Epoch 7/25
+Training:  41%|████      | 9/22 [00:19<00:11,  1.10it/s, loss=0.69, acc=57.8] Epoch 7/25
+Training:  45%|████▌     | 10/22 [00:19<00:09,  1.21it/s, loss=0.69, acc=57.8]Epoch 7/25
+Training:  45%|████▌     | 10/22 [00:20<00:09,  1.21it/s, loss=0.69, acc=57.4]Epoch 7/25
+Training:  50%|█████     | 11/22 [00:20<00:08,  1.30it/s, loss=0.69, acc=57.4]Epoch 7/25
+Training:  50%|█████     | 11/22 [00:20<00:08,  1.30it/s, loss=0.688, acc=57.6]Epoch 7/25
+Training:  55%|█████▍    | 12/22 [00:20<00:07,  1.38it/s, loss=0.688, acc=57.6]Epoch 7/25
+Training:  55%|█████▍    | 12/22 [00:21<00:07,  1.38it/s, loss=0.687, acc=57]  Epoch 7/25
+Training:  59%|█████▉    | 13/22 [00:21<00:06,  1.43it/s, loss=0.687, acc=57]Epoch 7/25
+Training:  59%|█████▉    | 13/22 [00:22<00:06,  1.43it/s, loss=0.687, acc=56.8]Epoch 7/25
+Training:  64%|██████▎   | 14/22 [00:22<00:05,  1.47it/s, loss=0.687, acc=56.8]Epoch 7/25
+Training:  64%|██████▎   | 14/22 [00:22<00:05,  1.47it/s, loss=0.687, acc=56.6]Epoch 7/25
+Training:  68%|██████▊   | 15/22 [00:22<00:04,  1.52it/s, loss=0.687, acc=56.6]Epoch 7/25
+Training:  68%|██████▊   | 15/22 [00:23<00:04,  1.52it/s, loss=0.687, acc=56.3]Epoch 7/25
+Training:  73%|███████▎  | 16/22 [00:23<00:03,  1.57it/s, loss=0.687, acc=56.3]Epoch 7/25
+Training:  73%|███████▎  | 16/22 [00:23<00:03,  1.57it/s, loss=0.686, acc=56.7]Epoch 7/25
+Training:  77%|███████▋  | 17/22 [00:23<00:03,  1.60it/s, loss=0.686, acc=56.7]Epoch 7/25
+Training:  77%|███████▋  | 17/22 [00:24<00:03,  1.60it/s, loss=0.684, acc=57]  Epoch 7/25
+Training:  82%|████████▏ | 18/22 [00:24<00:02,  1.63it/s, loss=0.684, acc=57]Epoch 7/25
+Training:  82%|████████▏ | 18/22 [00:25<00:02,  1.63it/s, loss=0.682, acc=57.3]Epoch 7/25
+Training:  86%|████████▋ | 19/22 [00:25<00:01,  1.64it/s, loss=0.682, acc=57.3]Epoch 7/25
+Training:  86%|████████▋ | 19/22 [00:25<00:01,  1.64it/s, loss=0.681, acc=57.2]Epoch 7/25
+Training:  91%|█████████ | 20/22 [00:25<00:01,  1.66it/s, loss=0.681, acc=57.2]Epoch 7/25
+Training:  91%|█████████ | 20/22 [00:26<00:01,  1.66it/s, loss=0.683, acc=56.5]Epoch 7/25
+Training:  95%|█████████▌| 21/22 [00:26<00:00,  1.66it/s, loss=0.683, acc=56.5]Epoch 7/25
+Training:  95%|█████████▌| 21/22 [00:26<00:00,  1.66it/s, loss=0.684, acc=56.5]Epoch 7/25
+Training: 100%|██████████| 22/22 [00:26<00:00,  2.13it/s, loss=0.684, acc=56.5]Epoch 7/25
+Training: 100%|██████████| 22/22 [00:46<00:00,  2.11s/it, loss=0.684, acc=56.5]
+Validation:   0%|          | 0/4 [00:00<?, ?it/s]Validation:   0%|          | 0/4 [00:08<?, ?it/s, loss=0.699, acc=53.1]Validation:  25%|██▌       | 1/4 [00:08<00:26,  8.79s/it, loss=0.699, acc=53.1]Validation:  25%|██▌       | 1/4 [00:09<00:26,  8.79s/it, loss=0.69, acc=53.1] Validation:  50%|█████     | 2/4 [00:09<00:07,  3.97s/it, loss=0.69, acc=53.1]Validation:  50%|█████     | 2/4 [00:09<00:07,  3.97s/it, loss=0.691, acc=55.2]Validation:  75%|███████▌  | 3/4 [00:09<00:02,  2.38s/it, loss=0.691, acc=55.2]Validation:  75%|███████▌  | 3/4 [00:10<00:02,  2.38s/it, loss=0.689, acc=56.2]Validation: 100%|██████████| 4/4 [00:10<00:00,  1.58s/it, loss=0.689, acc=56.2]Validation: 100%|██████████| 4/4 [00:30<00:00,  7.56s/it, loss=0.689, acc=56.2]
+Epoch 7/25
+Train Loss: 0.6836, Train Acc: 56.47%
+Val Loss: 0.6889, Val Acc: 56.25%
+Memory usage: 0.41GB / 24.00GB (57.1%)
+Epoch 8/25
+Training:   0%|          | 0/22 [00:00<?, ?it/s]Epoch 8/25
+Training:   0%|          | 0/22 [00:12<?, ?it/s, loss=0.702, acc=56.2]Epoch 8/25
+Training:   5%|▍         | 1/22 [00:12<04:23, 12.54s/it, loss=0.702, acc=56.2]Epoch 8/25
+Training:   5%|▍         | 1/22 [00:13<04:23, 12.54s/it, loss=0.697, acc=57.8]Epoch 8/25
+Training:   9%|▉         | 2/22 [00:13<01:50,  5.53s/it, loss=0.697, acc=57.8]Epoch 8/25
+Training:   9%|▉         | 2/22 [00:13<01:50,  5.53s/it, loss=0.697, acc=56.2]Epoch 8/25
+Training:  14%|█▎        | 3/22 [00:13<01:02,  3.28s/it, loss=0.697, acc=56.2]Epoch 8/25
+Training:  14%|█▎        | 3/22 [00:14<01:02,  3.28s/it, loss=0.684, acc=60.2]Epoch 8/25
+Training:  18%|█▊        | 4/22 [00:14<00:40,  2.24s/it, loss=0.684, acc=60.2]Epoch 8/25
+Training:  18%|█▊        | 4/22 [00:15<00:40,  2.24s/it, loss=0.676, acc=61.2]Epoch 8/25
+Training:  23%|██▎       | 5/22 [00:15<00:32,  1.94s/it, loss=0.676, acc=61.2]Epoch 8/25
+Training:  23%|██▎       | 5/22 [00:16<00:32,  1.94s/it, loss=0.677, acc=59.4]Epoch 8/25
+Training:  27%|██▋       | 6/22 [00:16<00:26,  1.64s/it, loss=0.677, acc=59.4]Epoch 8/25
+Training:  27%|██▋       | 6/22 [00:17<00:26,  1.64s/it, loss=0.675, acc=60]  Epoch 8/25
+Training:  32%|███▏      | 7/22 [00:17<00:19,  1.33s/it, loss=0.675, acc=60]Epoch 8/25
+Training:  32%|███▏      | 7/22 [00:18<00:19,  1.33s/it, loss=0.675, acc=59]Epoch 8/25
+Training:  36%|███▋      | 8/22 [00:18<00:15,  1.11s/it, loss=0.675, acc=59]Epoch 8/25
+Training:  36%|███▋      | 8/22 [00:18<00:15,  1.11s/it, loss=0.679, acc=59]Epoch 8/25
+Training:  41%|████      | 9/22 [00:18<00:12,  1.03it/s, loss=0.679, acc=59]Epoch 8/25
+Training:  41%|████      | 9/22 [00:19<00:12,  1.03it/s, loss=0.676, acc=59.4]Epoch 8/25
+Training:  45%|████▌     | 10/22 [00:19<00:10,  1.13it/s, loss=0.676, acc=59.4]Epoch 8/25
+Training:  45%|████▌     | 10/22 [00:20<00:10,  1.13it/s, loss=0.676, acc=60.2]Epoch 8/25
+Training:  50%|█████     | 11/22 [00:20<00:09,  1.20it/s, loss=0.676, acc=60.2]Epoch 8/25
+Training:  50%|█████     | 11/22 [00:21<00:09,  1.20it/s, loss=0.675, acc=59.9]Epoch 8/25
+Training:  55%|█████▍    | 12/22 [00:21<00:08,  1.24it/s, loss=0.675, acc=59.9]Epoch 8/25
+Training:  55%|█████▍    | 12/22 [00:21<00:08,  1.24it/s, loss=0.673, acc=59.9]Epoch 8/25
+Training:  59%|█████▉    | 13/22 [00:21<00:06,  1.29it/s, loss=0.673, acc=59.9]Epoch 8/25
+Training:  59%|█████▉    | 13/22 [00:22<00:06,  1.29it/s, loss=0.67, acc=60.2] Epoch 8/25
+Training:  64%|██████▎   | 14/22 [00:22<00:06,  1.32it/s, loss=0.67, acc=60.2]Epoch 8/25
+Training:  64%|██████▎   | 14/22 [00:23<00:06,  1.32it/s, loss=0.668, acc=60.2]Epoch 8/25
+Training:  68%|██████▊   | 15/22 [00:23<00:05,  1.27it/s, loss=0.668, acc=60.2]Epoch 8/25
+Training:  68%|██████▊   | 15/22 [00:24<00:05,  1.27it/s, loss=0.668, acc=59.9]Epoch 8/25
+Training:  73%|███████▎  | 16/22 [00:24<00:04,  1.25it/s, loss=0.668, acc=59.9]Epoch 8/25
+Training:  73%|███████▎  | 16/22 [00:24<00:04,  1.25it/s, loss=0.675, acc=59.2]Epoch 8/25
+Training:  77%|███████▋  | 17/22 [00:24<00:04,  1.24it/s, loss=0.675, acc=59.2]Epoch 8/25
+Training:  77%|███████▋  | 17/22 [00:25<00:04,  1.24it/s, loss=0.675, acc=59.5]Epoch 8/25
+Training:  82%|████████▏ | 18/22 [00:25<00:03,  1.23it/s, loss=0.675, acc=59.5]Epoch 8/25
+Training:  82%|████████▏ | 18/22 [00:26<00:03,  1.23it/s, loss=0.673, acc=60.3]Epoch 8/25
+Training:  86%|████████▋ | 19/22 [00:26<00:02,  1.23it/s, loss=0.673, acc=60.3]Epoch 8/25
+Training:  86%|████████▋ | 19/22 [00:27<00:02,  1.23it/s, loss=0.672, acc=60.6]Epoch 8/25
+Training:  91%|█████████ | 20/22 [00:27<00:01,  1.25it/s, loss=0.672, acc=60.6]Epoch 8/25
+Training:  91%|█████████ | 20/22 [00:28<00:01,  1.25it/s, loss=0.67, acc=60.7] Epoch 8/25
+Training:  95%|█████████▌| 21/22 [00:28<00:00,  1.32it/s, loss=0.67, acc=60.7]Epoch 8/25
+Training:  95%|█████████▌| 21/22 [00:28<00:00,  1.32it/s, loss=0.67, acc=60.7]Epoch 8/25
+Training: 100%|██████████| 22/22 [00:28<00:00,  1.71it/s, loss=0.67, acc=60.7]Epoch 8/25
+Training: 100%|██████████| 22/22 [00:48<00:00,  2.19s/it, loss=0.67, acc=60.7]
+Validation:   0%|          | 0/4 [00:00<?, ?it/s]Validation:   0%|          | 0/4 [00:08<?, ?it/s, loss=0.79, acc=51.6]Validation:  25%|██▌       | 1/4 [00:08<00:25,  8.56s/it, loss=0.79, acc=51.6]Validation:  25%|██▌       | 1/4 [00:09<00:25,  8.56s/it, loss=0.726, acc=57.8]Validation:  50%|█████     | 2/4 [00:09<00:07,  3.78s/it, loss=0.726, acc=57.8]Validation:  50%|█████     | 2/4 [00:09<00:07,  3.78s/it, loss=0.717, acc=55.7]Validation:  75%|███████▌  | 3/4 [00:09<00:02,  2.25s/it, loss=0.717, acc=55.7]Validation:  75%|███████▌  | 3/4 [00:09<00:02,  2.25s/it, loss=0.722, acc=55]  Validation: 100%|██████████| 4/4 [00:09<00:00,  1.49s/it, loss=0.722, acc=55]Validation: 100%|██████████| 4/4 [00:29<00:00,  7.44s/it, loss=0.722, acc=55]
+Epoch 8/25
+Train Loss: 0.6699, Train Acc: 60.74%
+Val Loss: 0.7216, Val Acc: 55.00%
+Memory usage: 0.42GB / 24.00GB (51.2%)
+Epoch 9/25
+Training:   0%|          | 0/22 [00:00<?, ?it/s]Epoch 9/25
+Training:   0%|          | 0/22 [00:11<?, ?it/s, loss=0.618, acc=70.3]Epoch 9/25
+Training:   5%|▍         | 1/22 [00:11<03:53, 11.11s/it, loss=0.618, acc=70.3]Epoch 9/25
+Training:   5%|▍         | 1/22 [00:11<03:53, 11.11s/it, loss=0.663, acc=66.4]Epoch 9/25
+Training:   9%|▉         | 2/22 [00:11<01:38,  4.94s/it, loss=0.663, acc=66.4]Epoch 9/25
+Training:   9%|▉         | 2/22 [00:12<01:38,  4.94s/it, loss=0.658, acc=62]  Epoch 9/25
+Training:  14%|█▎        | 3/22 [00:12<00:56,  2.96s/it, loss=0.658, acc=62]Epoch 9/25
+Training:  14%|█▎        | 3/22 [00:12<00:56,  2.96s/it, loss=0.665, acc=60.5]Epoch 9/25
+Training:  18%|█▊        | 4/22 [00:12<00:36,  2.02s/it, loss=0.665, acc=60.5]Epoch 9/25
+Training:  18%|█▊        | 4/22 [00:13<00:36,  2.02s/it, loss=0.663, acc=61.2]Epoch 9/25
+Training:  23%|██▎       | 5/22 [00:13<00:25,  1.52s/it, loss=0.663, acc=61.2]Epoch 9/25
+Training:  23%|██▎       | 5/22 [00:14<00:25,  1.52s/it, loss=0.677, acc=59.1]Epoch 9/25
+Training:  27%|██▋       | 6/22 [00:14<00:19,  1.23s/it, loss=0.677, acc=59.1]Epoch 9/25
+Training:  27%|██▋       | 6/22 [00:14<00:19,  1.23s/it, loss=0.676, acc=59.4]Epoch 9/25
+Training:  32%|███▏      | 7/22 [00:14<00:16,  1.07s/it, loss=0.676, acc=59.4]Epoch 9/25
+Training:  32%|███▏      | 7/22 [00:15<00:16,  1.07s/it, loss=0.677, acc=60]  Epoch 9/25
+Training:  36%|███▋      | 8/22 [00:15<00:13,  1.05it/s, loss=0.677, acc=60]Epoch 9/25
+Training:  36%|███▋      | 8/22 [00:16<00:13,  1.05it/s, loss=0.684, acc=60.1]Epoch 9/25
+Training:  41%|████      | 9/22 [00:16<00:11,  1.17it/s, loss=0.684, acc=60.1]Epoch 9/25
+Training:  41%|████      | 9/22 [00:16<00:11,  1.17it/s, loss=0.681, acc=59.8]Epoch 9/25
+Training:  45%|████▌     | 10/22 [00:16<00:09,  1.29it/s, loss=0.681, acc=59.8]Epoch 9/25
+Training:  45%|████▌     | 10/22 [00:17<00:09,  1.29it/s, loss=0.681, acc=59.8]Epoch 9/25
+Training:  50%|█████     | 11/22 [00:17<00:07,  1.38it/s, loss=0.681, acc=59.8]Epoch 9/25
+Training:  50%|█████     | 11/22 [00:18<00:07,  1.38it/s, loss=0.68, acc=59.5] Epoch 9/25
+Training:  55%|█████▍    | 12/22 [00:18<00:06,  1.44it/s, loss=0.68, acc=59.5]Epoch 9/25
+Training:  55%|█████▍    | 12/22 [00:18<00:06,  1.44it/s, loss=0.68, acc=59.1]Epoch 9/25
+Training:  59%|█████▉    | 13/22 [00:18<00:06,  1.48it/s, loss=0.68, acc=59.1]Epoch 9/25
+Training:  59%|█████▉    | 13/22 [00:19<00:06,  1.48it/s, loss=0.679, acc=59.2]Epoch 9/25
+Training:  64%|██████▎   | 14/22 [00:19<00:05,  1.49it/s, loss=0.679, acc=59.2]Epoch 9/25
+Training:  64%|██████▎   | 14/22 [00:20<00:05,  1.49it/s, loss=0.676, acc=59.9]Epoch 9/25
+Training:  68%|██████▊   | 15/22 [00:20<00:04,  1.45it/s, loss=0.676, acc=59.9]Epoch 9/25
+Training:  68%|██████▊   | 15/22 [00:20<00:04,  1.45it/s, loss=0.676, acc=59.7]Epoch 9/25
+Training:  73%|███████▎  | 16/22 [00:20<00:04,  1.50it/s, loss=0.676, acc=59.7]Epoch 9/25
+Training:  73%|███████▎  | 16/22 [00:21<00:04,  1.50it/s, loss=0.676, acc=59.4]Epoch 9/25
+Training:  77%|███████▋  | 17/22 [00:21<00:03,  1.54it/s, loss=0.676, acc=59.4]Epoch 9/25
+Training:  77%|███████▋  | 17/22 [00:21<00:03,  1.54it/s, loss=0.675, acc=59.1]Epoch 9/25
+Training:  82%|████████▏ | 18/22 [00:21<00:02,  1.58it/s, loss=0.675, acc=59.1]Epoch 9/25
+Training:  82%|████████▏ | 18/22 [00:22<00:02,  1.58it/s, loss=0.675, acc=58.8]Epoch 9/25
+Training:  86%|████████▋ | 19/22 [00:22<00:01,  1.61it/s, loss=0.675, acc=58.8]Epoch 9/25
+Training:  86%|████████▋ | 19/22 [00:23<00:01,  1.61it/s, loss=0.677, acc=58.6]Epoch 9/25
+Training:  91%|█████████ | 20/22 [00:23<00:01,  1.63it/s, loss=0.677, acc=58.6]Epoch 9/25
+Training:  91%|█████████ | 20/22 [00:23<00:01,  1.63it/s, loss=0.678, acc=58.3]Epoch 9/25
+Training:  95%|█████████▌| 21/22 [00:23<00:00,  1.64it/s, loss=0.678, acc=58.3]Epoch 9/25
+Training:  95%|█████████▌| 21/22 [00:23<00:00,  1.64it/s, loss=0.678, acc=58.3]Epoch 9/25
+Training: 100%|██████████| 22/22 [00:23<00:00,  2.10it/s, loss=0.678, acc=58.3]Epoch 9/25
+Training: 100%|██████████| 22/22 [00:43<00:00,  2.00s/it, loss=0.678, acc=58.3]
+Validation:   0%|          | 0/4 [00:00<?, ?it/s]Validation:   0%|          | 0/4 [00:10<?, ?it/s, loss=0.654, acc=59.4]Validation:  25%|██▌       | 1/4 [00:10<00:31, 10.34s/it, loss=0.654, acc=59.4]Validation:  25%|██▌       | 1/4 [00:10<00:31, 10.34s/it, loss=0.67, acc=56.2] Validation:  50%|█████     | 2/4 [00:10<00:09,  4.58s/it, loss=0.67, acc=56.2]Validation:  50%|█████     | 2/4 [00:11<00:09,  4.58s/it, loss=0.682, acc=54.2]Validation:  75%|███████▌  | 3/4 [00:11<00:02,  2.70s/it, loss=0.682, acc=54.2]Validation:  75%|███████▌  | 3/4 [00:11<00:02,  2.70s/it, loss=0.699, acc=55.4]Validation: 100%|██████████| 4/4 [00:11<00:00,  1.78s/it, loss=0.699, acc=55.4]Validation: 100%|██████████| 4/4 [00:31<00:00,  7.93s/it, loss=0.699, acc=55.4]
+Epoch 9/25
+Train Loss: 0.6781, Train Acc: 58.31%
+Val Loss: 0.6995, Val Acc: 55.42%
+Memory usage: 0.42GB / 24.00GB (56.2%)
+Epoch 10/25
+Training:   0%|          | 0/22 [00:00<?, ?it/s]Epoch 10/25
+Training:   0%|          | 0/22 [00:11<?, ?it/s, loss=0.73, acc=51.6]Epoch 10/25
+Training:   5%|▍         | 1/22 [00:11<03:55, 11.23s/it, loss=0.73, acc=51.6]Epoch 10/25
+Training:   5%|▍         | 1/22 [00:11<03:55, 11.23s/it, loss=0.688, acc=59.4]Epoch 10/25
+Training:   9%|▉         | 2/22 [00:11<01:39,  4.97s/it, loss=0.688, acc=59.4]Epoch 10/25
+Training:   9%|▉         | 2/22 [00:12<01:39,  4.97s/it, loss=0.682, acc=59.9]Epoch 10/25
+Training:  14%|█▎        | 3/22 [00:12<00:56,  2.97s/it, loss=0.682, acc=59.9]Epoch 10/25
+Training:  14%|█▎        | 3/22 [00:13<00:56,  2.97s/it, loss=0.692, acc=58.2]Epoch 10/25
+Training:  18%|█▊        | 4/22 [00:13<00:36,  2.03s/it, loss=0.692, acc=58.2]Epoch 10/25
+Training:  18%|█▊        | 4/22 [00:13<00:36,  2.03s/it, loss=0.684, acc=59.7]Epoch 10/25
+Training:  23%|██▎       | 5/22 [00:13<00:25,  1.52s/it, loss=0.684, acc=59.7]Epoch 10/25
+Training:  23%|██▎       | 5/22 [00:14<00:25,  1.52s/it, loss=0.687, acc=59.9]Epoch 10/25
+Training:  27%|██▋       | 6/22 [00:14<00:19,  1.21s/it, loss=0.687, acc=59.9]Epoch 10/25
+Training:  27%|██▋       | 6/22 [00:14<00:19,  1.21s/it, loss=0.686, acc=57.8]Epoch 10/25
+Training:  32%|███▏      | 7/22 [00:14<00:15,  1.02s/it, loss=0.686, acc=57.8]Epoch 10/25
+Training:  32%|███▏      | 7/22 [00:15<00:15,  1.02s/it, loss=0.683, acc=58.2]Epoch 10/25
+Training:  36%|███▋      | 8/22 [00:15<00:12,  1.08it/s, loss=0.683, acc=58.2]Epoch 10/25
+Training:  36%|███▋      | 8/22 [00:16<00:12,  1.08it/s, loss=0.68, acc=58.7] Epoch 10/25
+Training:  41%|████      | 9/22 [00:16<00:11,  1.18it/s, loss=0.68, acc=58.7]Epoch 10/25
+Training:  41%|████      | 9/22 [00:16<00:11,  1.18it/s, loss=0.676, acc=58.9]Epoch 10/25
+Training:  45%|████▌     | 10/22 [00:16<00:09,  1.27it/s, loss=0.676, acc=58.9]Epoch 10/25
+Training:  45%|████▌     | 10/22 [00:17<00:09,  1.27it/s, loss=0.675, acc=58.8]Epoch 10/25
+Training:  50%|█████     | 11/22 [00:17<00:08,  1.34it/s, loss=0.675, acc=58.8]Epoch 10/25
+Training:  50%|█████     | 11/22 [00:18<00:08,  1.34it/s, loss=0.669, acc=59.5]Epoch 10/25
+Training:  55%|█████▍    | 12/22 [00:18<00:07,  1.41it/s, loss=0.669, acc=59.5]Epoch 10/25
+Training:  55%|█████▍    | 12/22 [00:18<00:07,  1.41it/s, loss=0.668, acc=59.5]Epoch 10/25
+Training:  59%|█████▉    | 13/22 [00:18<00:06,  1.46it/s, loss=0.668, acc=59.5]Epoch 10/25
+Training:  59%|█████▉    | 13/22 [00:19<00:06,  1.46it/s, loss=0.67, acc=58.9] Epoch 10/25
+Training:  64%|██████▎   | 14/22 [00:19<00:05,  1.49it/s, loss=0.67, acc=58.9]Epoch 10/25
+Training:  64%|██████▎   | 14/22 [00:20<00:05,  1.49it/s, loss=0.67, acc=58.5]Epoch 10/25
+Training:  68%|██████▊   | 15/22 [00:20<00:04,  1.50it/s, loss=0.67, acc=58.5]Epoch 10/25
+Training:  68%|██████▊   | 15/22 [00:20<00:04,  1.50it/s, loss=0.668, acc=59.1]Epoch 10/25
+Training:  73%|███████▎  | 16/22 [00:20<00:04,  1.49it/s, loss=0.668, acc=59.1]Epoch 10/25
+Training:  73%|███████▎  | 16/22 [00:21<00:04,  1.49it/s, loss=0.668, acc=58.8]Epoch 10/25
+Training:  77%|███████▋  | 17/22 [00:21<00:03,  1.47it/s, loss=0.668, acc=58.8]Epoch 10/25
+Training:  77%|███████▋  | 17/22 [00:22<00:03,  1.47it/s, loss=0.667, acc=59]  Epoch 10/25
+Training:  82%|████████▏ | 18/22 [00:22<00:02,  1.46it/s, loss=0.667, acc=59]Epoch 10/25
+Training:  82%|████████▏ | 18/22 [00:22<00:02,  1.46it/s, loss=0.666, acc=59]Epoch 10/25
+Training:  86%|████████▋ | 19/22 [00:22<00:02,  1.45it/s, loss=0.666, acc=59]Epoch 10/25
+Training:  86%|████████▋ | 19/22 [00:23<00:02,  1.45it/s, loss=0.664, acc=58.8]Epoch 10/25
+Training:  91%|█████████ | 20/22 [00:23<00:01,  1.44it/s, loss=0.664, acc=58.8]Epoch 10/25
+Training:  91%|█████████ | 20/22 [00:24<00:01,  1.44it/s, loss=0.666, acc=58.5]Epoch 10/25
+Training:  95%|█████████▌| 21/22 [00:24<00:00,  1.41it/s, loss=0.666, acc=58.5]Epoch 10/25
+Training:  95%|█████████▌| 21/22 [00:24<00:00,  1.41it/s, loss=0.666, acc=58.4]Epoch 10/25
+Training: 100%|██████████| 22/22 [00:24<00:00,  1.79it/s, loss=0.666, acc=58.4]Epoch 10/25
+Training: 100%|██████████| 22/22 [00:44<00:00,  2.02s/it, loss=0.666, acc=58.4]
+Validation:   0%|          | 0/4 [00:00<?, ?it/s]Validation:   0%|          | 0/4 [00:09<?, ?it/s, loss=0.673, acc=56.2]Validation:  25%|██▌       | 1/4 [00:09<00:29,  9.68s/it, loss=0.673, acc=56.2]Validation:  25%|██▌       | 1/4 [00:10<00:29,  9.68s/it, loss=0.671, acc=57]  Validation:  50%|█████     | 2/4 [00:10<00:08,  4.24s/it, loss=0.671, acc=57]Validation:  50%|█████     | 2/4 [00:10<00:08,  4.24s/it, loss=0.692, acc=57.3]Validation:  75%|███████▌  | 3/4 [00:10<00:02,  2.51s/it, loss=0.692, acc=57.3]Validation:  75%|███████▌  | 3/4 [00:10<00:02,  2.51s/it, loss=0.697, acc=57.5]Validation: 100%|██████████| 4/4 [00:10<00:00,  1.65s/it, loss=0.697, acc=57.5]Validation: 100%|██████████| 4/4 [00:30<00:00,  7.73s/it, loss=0.697, acc=57.5]
+Epoch 10/25
+Train Loss: 0.6662, Train Acc: 58.38%
+Val Loss: 0.6971, Val Acc: 57.50%
+Early stopping triggered after 10 epochs
+
+Evaluating model on test set...
+Using MPS (Metal Performance Shaders) device
+Testing:   0%|          | 0/7 [00:00<?, ?it/s]Testing:   0%|          | 0/7 [00:10<?, ?it/s, loss=0.677, acc=62.5]Testing:  14%|█▍        | 1/7 [00:10<01:03, 10.54s/it, loss=0.677, acc=62.5]Testing:  14%|█▍        | 1/7 [00:10<01:03, 10.54s/it, loss=0.677, acc=60.2]Testing:  29%|██▊       | 2/7 [00:10<00:22,  4.60s/it, loss=0.677, acc=60.2]Testing:  29%|██▊       | 2/7 [00:11<00:22,  4.60s/it, loss=0.682, acc=58.3]Testing:  43%|████▎     | 3/7 [00:11<00:10,  2.70s/it, loss=0.682, acc=58.3]Testing:  43%|████▎     | 3/7 [00:11<00:10,  2.70s/it, loss=0.682, acc=56.6]Testing:  57%|█████▋    | 4/7 [00:11<00:05,  1.81s/it, loss=0.682, acc=56.6]Testing:  57%|█████▋    | 4/7 [00:12<00:05,  1.81s/it, loss=0.683, acc=56.2]Testing:  71%|███████▏  | 5/7 [00:12<00:02,  1.32s/it, loss=0.683, acc=56.2]Testing:  71%|███████▏  | 5/7 [00:12<00:02,  1.32s/it, loss=0.685, acc=55.2]Testing:  86%|████████▌ | 6/7 [00:12<00:01,  1.02s/it, loss=0.685, acc=55.2]Testing:  86%|████████▌ | 6/7 [00:12<00:01,  1.02s/it, loss=0.685, acc=54.8]Testing: 100%|██████████| 7/7 [00:12<00:00,  1.36it/s, loss=0.685, acc=54.8]Testing: 100%|██████████| 7/7 [00:32<00:00,  4.70s/it, loss=0.685, acc=54.8]
+2025-03-05 13:52:20.766 python[17563:57175648] +[IMKClient subclass]: chose IMKClient_Modern
+2025-03-05 13:52:20.766 python[17563:57175648] +[IMKInputSession subclass]: chose IMKInputSession_Modern
+Test Loss: 0.6852, Test Acc: 54.75%
+
+Confusion Matrix:
+[[134  66]
+ [115  85]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+    No Horse       0.54      0.67      0.60       200
+       Horse       0.56      0.42      0.48       200
+
+    accuracy                           0.55       400
+   macro avg       0.55      0.55      0.54       400
+weighted avg       0.55      0.55      0.54       400
+
+Model saved to models/horse_detection_20250305_135219.pth
+Saved plot to results/figures/horse_detection_history_20250305_135220.png
+Training history plot saved to results/figures/horse_detection_history_20250305_135220.png

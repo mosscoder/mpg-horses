@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/Users/esamsoe/Projects/Dev/MPG_Ranch/mpg-horses/src/horse_detection.py", line 1422, in <module>
+    main(args)
+    ~~~~^^^^^^
+  File "/Users/esamsoe/Projects/Dev/MPG_Ranch/mpg-horses/src/horse_detection.py", line 1265, in main
+    device = get_device(args.device)
+TypeError: get_device() takes 0 positional arguments but 1 was given
+Random seed set to 42
+Error in main function: get_device() takes 0 positional arguments but 1 was given
