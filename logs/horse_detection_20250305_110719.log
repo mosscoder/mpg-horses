@@ -1,0 +1,5 @@
+usage: horse_detection.py [-h] [--batch_size BATCH_SIZE]
+                          [--num_epochs NUM_EPOCHS] [--patience PATIENCE]
+                          [--subset_size SUBSET_SIZE] [--test_size TEST_SIZE]
+                          [--save_model] [--plot_history]
+horse_detection.py: error: unrecognized arguments: --progressive_loading

@@ -1,0 +1,868 @@
+Dataset size: 12780
+Label distribution: {1: np.int64(7100), 0: np.int64(5680)}
+
+===== DATASET INSPECTION =====
+Dataset type: DataFrame with 12780 samples
+
+Columns: ['idx', 'Presence', 'Zone', 'Period', 'Recency', 'datetime_groundtruth', 'datetime_aerialsurvey', 'Latitude', 'Longitude', 'Easting', 'Northing', 'Ellipsoidal_height', 'orthomosaic', 'tile_path', 'observation_offset', 'encoded_tile', '__index_level_0__', 'image_base64']
+
+Potential image columns: ['tile_path', 'encoded_tile', 'image_base64']
+
+Label distribution: {1: 7100, 0: 5680}
+
+Inspecting 3 random samples:
+
+Sample 1 (index 12381):
+  idx: 1550
+  Presence: 0
+  Zone: 0
+  Period: 0
+  Recency: 0
+  datetime_groundtruth: 2024-07-24 18:00:00+00:00
+  datetime_aerialsurvey: 2024-05-06 00:00:00
+  Latitude: 46.67527444
+  Longitude: -114.0175151
+  Easting: 728109.3232409942
+  Northing: 5173400.514556622
+  Ellipsoidal_height: 1091.409
+  orthomosaic: 240506_upperpartridge
+  observation_offset: -80
+  __index_level_0__: 12381
+  tile_path: String (length: 59)
+    Starts with: ../data/raster/tiles/240506_up...
+  encoded_tile: Binary data (length: 360509)
+  image_base64: Binary data (length: 360509)
+
+Sample 2 (index 2635):
+  idx: 143
+  Presence: 1
+  Zone: 2
+  Period: 1
+  Recency: 1
+  datetime_groundtruth: 2024-04-25 08:12:35.400000+00:00
+  datetime_aerialsurvey: 2024-07-02 00:00:00
+  Latitude: 46.67877531
+  Longitude: -114.011571
+  Easting: 728549.1484380491
+  Northing: 5173806.748617073
+  Ellipsoidal_height: 1130.9
+  orthomosaic: 240702_upperpartridge
+  observation_offset: 67
+  __index_level_0__: 2635
+  tile_path: String (length: 59)
+    Starts with: ../data/raster/tiles/240702_up...
+  encoded_tile: Binary data (length: 350200)
+  image_base64: Binary data (length: 350200)
+
+Sample 3 (index 7028):
+  idx: 874
+  Presence: 1
+  Zone: 3
+  Period: 3
+  Recency: 2
+  datetime_groundtruth: 2024-07-18 07:49:57.200000+00:00
+  datetime_aerialsurvey: 2024-08-12 00:00:00
+  Latitude: 46.67463559
+  Longitude: -114.01463989
+  Easting: 728331.9094056865
+  Northing: 5173337.86962423
+  Ellipsoidal_height: 1109.037
+  orthomosaic: 240812_upperpartridge
+  observation_offset: 24
+  __index_level_0__: 7028
+  tile_path: String (length: 59)
+    Starts with: ../data/raster/tiles/240812_up...
+  encoded_tile: Binary data (length: 358364)
+  image_base64: Binary data (length: 358364)
+
+===== END OF INSPECTION =====
+
+Creating subset of 2000 samples
+Subset size: 2000
+Subset label distribution: {1: np.int64(1000), 0: np.int64(1000)}
+Train dataset size: 1600
+Test dataset size: 400
+Model created with 8,929,282 trainable parameters
+Using MPS (Metal Performance Shaders) device
+Training model...
+Epoch 1/10
+Training:   0%|          | 0/50 [00:00<?, ?it/s]Epoch 1/10
+Training:   0%|          | 0/50 [00:00<?, ?it/s, loss=0.685, acc=100]Epoch 1/10
+Training:   2%|▏         | 1/50 [00:00<00:34,  1.40it/s, loss=0.685, acc=100]Epoch 1/10
+Training:   2%|▏         | 1/50 [00:01<00:34,  1.40it/s, loss=0.492, acc=100]Epoch 1/10
+Training:   4%|▍         | 2/50 [00:01<00:23,  2.05it/s, loss=0.492, acc=100]Epoch 1/10
+Training:   4%|▍         | 2/50 [00:01<00:23,  2.05it/s, loss=0.354, acc=100]Epoch 1/10
+Training:   6%|▌         | 3/50 [00:01<00:19,  2.42it/s, loss=0.354, acc=100]Epoch 1/10
+Training:   6%|▌         | 3/50 [00:01<00:19,  2.42it/s, loss=0.269, acc=100]Epoch 1/10
+Training:   8%|▊         | 4/50 [00:01<00:17,  2.66it/s, loss=0.269, acc=100]Epoch 1/10
+Training:   8%|▊         | 4/50 [00:02<00:17,  2.66it/s, loss=0.216, acc=100]Epoch 1/10
+Training:  10%|█         | 5/50 [00:02<00:16,  2.80it/s, loss=0.216, acc=100]Error processing item 1372: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 913: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 1338: cannot identify image file <_io.BytesIO object at 0x544e47f10>
+Error processing item 1528: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 1492: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 966: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 688: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 1525: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 22: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 873: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 160: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 906: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 1017: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 622: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 1149: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 126: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 852: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 1056: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 558: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 1514: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 473: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 1551: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 864: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 1503: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 313: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 927: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 986: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 1106: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 1116: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 712: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 161: cannot identify image file <_io.BytesIO object at 0x3049730b0>
+Error processing item 1383: cannot identify image file <_io.BytesIO object at 0x30448d990>
+Error processing item 908: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 1363: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1085: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 20: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 146: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 835: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1334: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 996: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1520: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 802: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 715: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 228: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1144: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 936: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1139: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 124: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1219: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 139: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 312: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 58: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 354: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 625: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 611: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 1157: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 103: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 1584: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 74: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 1530: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1335: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 1024: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 51: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 989: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 924: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 854: cannot identify image file <_io.BytesIO object at 0x544e6c3b0>
+Error processing item 1547: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 921: cannot identify image file <_io.BytesIO object at 0x544e6c3b0>
+Error processing item 500: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 914: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 1240: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 1350: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 1052: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 295: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 1311: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 1130: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 1573: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 1127: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 1461: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 32: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 883: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 860: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 634: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 145: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 1169: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 15: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 560: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 1273: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 1234: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 529: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 65: cannot identify image file <_io.BytesIO object at 0x544e6c540>Epoch 1/10
+Training:  10%|█         | 5/50 [00:02<00:16,  2.80it/s, loss=0.18, acc=100] Epoch 1/10
+Training:  12%|█▏        | 6/50 [00:02<00:15,  2.91it/s, loss=0.18, acc=100]Epoch 1/10
+Training:  12%|█▏        | 6/50 [00:02<00:15,  2.91it/s, loss=0.155, acc=100]Epoch 1/10
+Training:  14%|█▍        | 7/50 [00:02<00:14,  3.00it/s, loss=0.155, acc=100]Epoch 1/10
+Training:  14%|█▍        | 7/50 [00:02<00:14,  3.00it/s, loss=0.135, acc=100]Epoch 1/10
+Training:  16%|█▌        | 8/50 [00:02<00:13,  3.07it/s, loss=0.135, acc=100]
+Error processing item 650: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 379: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 69: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 1093: cannot identify image file <_io.BytesIO object at 0x544e6c540>
+Error processing item 210: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 436: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 1061: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 617: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 359: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 1371: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 336: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 538: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 481: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 765: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 143: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 1069: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 880: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 547: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 1313: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 1420: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 376: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 175: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 215: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 388: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 268: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 792: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 708: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 1537: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 1084: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 159: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 1314: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 806: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 441: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 574: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 1021: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 300: cannot identify image file <_io.BytesIO object at 0x544e6ce00>
+Error processing item 775: cannot identify image file <_io.BytesIO object at 0x544e6c7c0>
+Error processing item 100: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 805: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 292: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 296: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 272: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 968: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 510: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 24: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 1035: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 579: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 516: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 464: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 423: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 1344: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 1160: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 75: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 828: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 1322: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 57: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 1279: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 659: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 772: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 895: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 1054: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 255: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 420: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 1496: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 200: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 1212: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 872: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 1041: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 307: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 744: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 800: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 596: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 187: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 949: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 1308: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 1095: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 1566: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 1057: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 639: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 330: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 729: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 1346: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 358: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 588: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 253: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 78: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 1507: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 248: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 1422: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 12: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 1538: cannot identify image file <_io.BytesIO object at 0x544e6cef0>Epoch 1/10
+Training:  16%|█▌        | 8/50 [00:03<00:13,  3.07it/s, loss=0.12, acc=100] Epoch 1/10
+Training:  18%|█▊        | 9/50 [00:03<00:13,  3.02it/s, loss=0.12, acc=100]Epoch 1/10
+Training:  18%|█▊        | 9/50 [00:03<00:13,  3.02it/s, loss=0.108, acc=100]Epoch 1/10
+Training:  20%|██        | 10/50 [00:03<00:13,  2.94it/s, loss=0.108, acc=100]Epoch 1/10
+Training:  20%|██        | 10/50 [00:03<00:13,  2.94it/s, loss=0.0984, acc=100]Epoch 1/10
+Training:  22%|██▏       | 11/50 [00:03<00:12,  3.03it/s, loss=0.0984, acc=100]
+Error processing item 1104: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 997: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 664: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 459: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 1167: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 1182: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 1303: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 390: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 1096: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 544: cannot identify image file <_io.BytesIO object at 0x544e6cef0>
+Error processing item 460: cannot identify image file <_io.BytesIO object at 0x544e6c9a0>
+Error processing item 322: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 570: cannot identify image file <_io.BytesIO object at 0x544e6c9a0>
+Error processing item 1341: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 1307: cannot identify image file <_io.BytesIO object at 0x544e6c9a0>
+Error processing item 1016: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 704: cannot identify image file <_io.BytesIO object at 0x544e6c9a0>
+Error processing item 1366: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 991: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 134: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 608: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 779: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 90: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 676: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 213: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 447: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 1598: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 399: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 1593: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 662: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 197: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 1300: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 926: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 1082: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 1491: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 1008: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 810: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 1118: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 630: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 61: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 1585: cannot identify image file <_io.BytesIO object at 0x544e6c450>
+Error processing item 992: cannot identify image file <_io.BytesIO object at 0x544e6d210>
+Error processing item 276: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 117: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 984: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 1535: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 236: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 498: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 979: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 1439: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 1385: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 1033: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 1552: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 190: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 589: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 1469: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 782: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 840: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 711: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 202: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 983: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 1362: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 590: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 752: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 648: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 710: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 191: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 84: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 967: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 1299: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 1581: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 1369: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 278: cannot identify image file <_io.BytesIO object at 0x544e6fdd0>
+Error processing item 789: cannot identify image file <_io.BytesIO object at 0x544e6d2b0>
+Error processing item 1380: cannot identify image file <_io.BytesIO object at 0x544e6cf40>
+Error processing item 532: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 855: cannot identify image file <_io.BytesIO object at 0x544e6cf40>
+Error processing item 641: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 1224: cannot identify image file <_io.BytesIO object at 0x544e6cf40>
+Error processing item 844: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 756: cannot identify image file <_io.BytesIO object at 0x544e6cf40>
+Error processing item 1493: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 1512: cannot identify image file <_io.BytesIO object at 0x544e6cf40>
+Error processing item 1263: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 49: cannot identify image file <_io.BytesIO object at 0x544e6cf40>
+Error processing item 380: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 152: cannot identify image file <_io.BytesIO object at 0x544e6cf40>
+Error processing item 45: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 1083: cannot identify image file <_io.BytesIO object at 0x544e6cf40>
+Error processing item 1128: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 256: cannot identify image file <_io.BytesIO object at 0x544e6cf40>Epoch 1/10
+Training:  22%|██▏       | 11/50 [00:04<00:12,  3.03it/s, loss=0.0902, acc=100]Epoch 1/10
+Training:  24%|██▍       | 12/50 [00:04<00:12,  3.09it/s, loss=0.0902, acc=100]Epoch 1/10
+Training:  24%|██▍       | 12/50 [00:04<00:12,  3.09it/s, loss=0.0833, acc=100]Epoch 1/10
+Training:  26%|██▌       | 13/50 [00:04<00:11,  3.14it/s, loss=0.0833, acc=100]Epoch 1/10
+Training:  26%|██▌       | 13/50 [00:04<00:11,  3.14it/s, loss=0.0773, acc=100]Epoch 1/10
+Training:  28%|██▊       | 14/50 [00:04<00:11,  3.18it/s, loss=0.0773, acc=100]
+Error processing item 683: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 155: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 1221: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 1289: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 66: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 602: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 1361: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 1433: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 951: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 479: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 647: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 995: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 793: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 237: cannot identify image file <_io.BytesIO object at 0x544e6c4a0>
+Error processing item 738: cannot identify image file <_io.BytesIO object at 0x544e6d350>
+Error processing item 1028: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 1191: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 1571: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 138: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 624: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 554: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 1517: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 848: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 1467: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 346: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 843: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 246: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 1092: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 632: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 1353: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 178: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 120: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 740: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 918: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 1015: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 1407: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 528: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 944: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 1374: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 129: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 786: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 527: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 1411: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 730: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 116: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 886: cannot identify image file <_io.BytesIO object at 0x544e6d1c0>
+Error processing item 884: cannot identify image file <_io.BytesIO object at 0x544e6ce50>
+Error processing item 1521: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 823: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 684: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 1278: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 1578: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 1435: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 311: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 533: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 1376: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 1205: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 653: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 1473: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 384: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 294: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 1183: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 424: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 714: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 1309: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 148: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 621: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 695: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 1293: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 1408: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 1230: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 748: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 471: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 801: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 767: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 1430: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 10: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 174: cannot identify image file <_io.BytesIO object at 0x544e6f920>
+Error processing item 1187: cannot identify image file <_io.BytesIO object at 0x544e6c590>
+Error processing item 189: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 540: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 211: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 1235: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 60: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 567: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 1172: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 1109: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 830: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 1080: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 686: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 693: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>Epoch 1/10
+Training:  28%|██▊       | 14/50 [00:05<00:11,  3.18it/s, loss=0.0722, acc=100]Epoch 1/10
+Training:  30%|███       | 15/50 [00:05<00:10,  3.20it/s, loss=0.0722, acc=100]Epoch 1/10
+Training:  30%|███       | 15/50 [00:05<00:10,  3.20it/s, loss=0.0677, acc=100]Epoch 1/10
+Training:  32%|███▏      | 16/50 [00:05<00:10,  3.23it/s, loss=0.0677, acc=100]Epoch 1/10
+Training:  32%|███▏      | 16/50 [00:05<00:10,  3.23it/s, loss=0.0637, acc=100]Epoch 1/10
+Training:  34%|███▍      | 17/50 [00:05<00:10,  3.24it/s, loss=0.0637, acc=100]
+Error processing item 946: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 721: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 1351: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 405: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 97: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 1318: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 184: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 1180: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 151: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 1545: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 1490: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 1321: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 1396: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 410: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 766: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 133: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 1393: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 1592: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 1390: cannot identify image file <_io.BytesIO object at 0x544e6cd60>
+Error processing item 30: cannot identify image file <_io.BytesIO object at 0x544e6cfe0>
+Error processing item 697: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 1588: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 1505: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 1368: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 140: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 83: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 1214: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 1199: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 899: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 451: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 89: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 1337: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 1094: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 896: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 1359: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 1468: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 1004: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 1105: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 305: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 11: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 240: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 443: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 5: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 1339: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 856: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 205: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 282: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 1556: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 218: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 646: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 271: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 1194: cannot identify image file <_io.BytesIO object at 0x544e6c9f0>
+Error processing item 43: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 442: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 699: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 1266: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 928: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 1073: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 310: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 571: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 329: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 247: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 1013: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 115: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 467: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 824: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 671: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 1526: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 339: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 362: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 1401: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 735: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 1342: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 508: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 768: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 1575: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 988: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 1560: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 1134: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 1107: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 88: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 1176: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 673: cannot identify image file <_io.BytesIO object at 0x544e6e9d0>
+Error processing item 1448: cannot identify image file <_io.BytesIO object at 0x544e6c680>
+Error processing item 361: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 682: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 716: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 1163: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 426: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 466: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 907: cannot identify image file <_io.BytesIO object at 0x544e6f600>Epoch 1/10
+Training:  34%|███▍      | 17/50 [00:06<00:10,  3.24it/s, loss=0.0602, acc=100]Epoch 1/10
+Training:  36%|███▌      | 18/50 [00:06<00:09,  3.24it/s, loss=0.0602, acc=100]Epoch 1/10
+Training:  36%|███▌      | 18/50 [00:06<00:09,  3.24it/s, loss=0.057, acc=100] Epoch 1/10
+Training:  38%|███▊      | 19/50 [00:06<00:09,  3.23it/s, loss=0.057, acc=100]
+Error processing item 957: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 623: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 185: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 1458: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 73: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 1427: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 1089: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 35: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 612: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 389: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 618: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 743: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 1202: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 417: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 1444: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 496: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 970: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 1025: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 1305: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 1360: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 987: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 1051: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 1412: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 166: cannot identify image file <_io.BytesIO object at 0x544e6f600>
+Error processing item 1042: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 338: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 1597: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 687: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 981: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 46: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 1565: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 188: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 1223: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1138: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 1532: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 728: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 123: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 474: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 279: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 4: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 297: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 757: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 353: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 635: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 1463: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1108: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 1058: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 1254: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1548: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 409: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 597: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 592: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 847: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 1154: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 455: cannot identify image file <_io.BytesIO object at 0x544e6fab0>
+Error processing item 1023: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1211: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 690: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 982: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 192: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 546: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 131: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 16: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 562: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 551: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 707: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 1292: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 1236: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 964: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 156: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 1577: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 1348: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 934: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 798: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 203: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 430: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 679: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 71: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 1470: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 1415: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 1132: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 1001: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 885: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 114: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 1414: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 784: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 931: cannot identify image file <_io.BytesIO object at 0x544e6cb80>
+Error processing item 633: cannot identify image file <_io.BytesIO object at 0x544e6ea20>
+Error processing item 209: cannot identify image file <_io.BytesIO object at 0x544e6ff60>
+Error processing item 700: cannot identify image file <_io.BytesIO object at 0x544e6c9a0>Epoch 1/10
+Training:  38%|███▊      | 19/50 [00:06<00:09,  3.23it/s, loss=0.0541, acc=100]Epoch 1/10
+Training:  40%|████      | 20/50 [00:06<00:09,  3.22it/s, loss=0.0541, acc=100]Epoch 1/10
+Training:  40%|████      | 20/50 [00:07<00:09,  3.22it/s, loss=0.0516, acc=100]Epoch 1/10
+Training:  42%|████▏     | 21/50 [00:07<00:09,  3.11it/s, loss=0.0516, acc=100]Epoch 1/10
+Training:  42%|████▏     | 21/50 [00:07<00:09,  3.11it/s, loss=0.0492, acc=100]Epoch 1/10
+Training:  44%|████▍     | 22/50 [00:07<00:08,  3.12it/s, loss=0.0492, acc=100]
+Error processing item 1459: cannot identify image file <_io.BytesIO object at 0x544e6ff60>
+Error processing item 523: cannot identify image file <_io.BytesIO object at 0x544e6c9a0>
+Error processing item 1518: cannot identify image file <_io.BytesIO object at 0x544e6ff60>
+Error processing item 1287: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 1340: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 916: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 1269: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 9: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 642: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 787: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 421: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 803: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 1389: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 64: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 245: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 1090: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 92: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 1591: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 870: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 1123: cannot identify image file <_io.BytesIO object at 0x544e6c9a0>
+Error processing item 993: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 1579: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 349: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 1260: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 1232: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 494: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 548: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 1029: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 1196: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 1229: cannot identify image file <_io.BytesIO object at 0x544e47fb0>
+Error processing item 1466: cannot identify image file <_io.BytesIO object at 0x544e6e890>
+Error processing item 396: cannot identify image file <_io.BytesIO object at 0x544e6d490>
+Error processing item 85: cannot identify image file <_io.BytesIO object at 0x544e6e890>
+Error processing item 260: cannot identify image file <_io.BytesIO object at 0x544e6d490>
+Error processing item 484: cannot identify image file <_io.BytesIO object at 0x544e6e890>
+Error processing item 80: cannot identify image file <_io.BytesIO object at 0x544e6cbd0>
+Error processing item 495: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 882: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 372: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1425: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 413: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1188: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1286: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 360: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 961: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 17: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 445: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1539: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 960: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 783: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 110: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 785: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 827: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 320: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1045: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1399: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 76: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1323: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1121: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 350: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 1175: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 419: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 845: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 731: cannot identify image file <_io.BytesIO object at 0x544e77470>
+Error processing item 1553: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 797: cannot identify image file <_io.BytesIO object at 0x544e76d40>
+Error processing item 555: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 1270: cannot identify image file <_io.BytesIO object at 0x544e76d40>
+Error processing item 573: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 1406: cannot identify image file <_io.BytesIO object at 0x544e76d40>
+Error processing item 315: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 293: cannot identify image file <_io.BytesIO object at 0x544e76d40>
+Error processing item 1220: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 137: cannot identify image file <_io.BytesIO object at 0x544e76d40>
+Error processing item 702: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 656: cannot identify image file <_io.BytesIO object at 0x544e76d40>
+Error processing item 454: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 1405: cannot identify image file <_io.BytesIO object at 0x544e76d40>
+Error processing item 395: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 1352: cannot identify image file <_io.BytesIO object at 0x544e76d40>
+Error processing item 136: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 604: cannot identify image file <_io.BytesIO object at 0x544e76d40>
+Error processing item 820: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 107: cannot identify image file <_io.BytesIO object at 0x544e76d40>
+Error processing item 112: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 807: cannot identify image file <_io.BytesIO object at 0x544e76d40>
+Error processing item 1480: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 101: cannot identify image file <_io.BytesIO object at 0x544e76d40>
+Error processing item 1481: cannot identify image file <_io.BytesIO object at 0x544e6cbd0>
+Error processing item 1365: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 553: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>Epoch 1/10
+Training:  44%|████▍     | 22/50 [00:07<00:08,  3.12it/s, loss=0.0471, acc=100]Epoch 1/10
+Training:  46%|████▌     | 23/50 [00:07<00:08,  3.15it/s, loss=0.0471, acc=100]Epoch 1/10
+Training:  46%|████▌     | 23/50 [00:08<00:08,  3.15it/s, loss=0.0451, acc=100]Epoch 1/10
+Training:  48%|████▊     | 24/50 [00:08<00:08,  3.18it/s, loss=0.0451, acc=100]Epoch 1/10
+Training:  48%|████▊     | 24/50 [00:08<00:08,  3.18it/s, loss=0.0433, acc=100]Epoch 1/10
+Training:  50%|█████     | 25/50 [00:08<00:07,  3.15it/s, loss=0.0433, acc=100]
+Error processing item 1053: cannot identify image file <_io.BytesIO object at 0x544e74130>
+Error processing item 449: cannot identify image file <_io.BytesIO object at 0x544e6ed40>
+Error processing item 998: cannot identify image file <_io.BytesIO object at 0x544e6f1a0>
+Error processing item 723: cannot identify image file <_io.BytesIO object at 0x544e6ee80>
+Error processing item 904: cannot identify image file <_io.BytesIO object at 0x544e6ee80>
+Error processing item 385: cannot identify image file <_io.BytesIO object at 0x544e6ee80>
+Error processing item 1570: cannot identify image file <_io.BytesIO object at 0x544e6ee80>
+Error processing item 499: cannot identify image file <_io.BytesIO object at 0x544e6ee80>
+Error processing item 371: cannot identify image file <_io.BytesIO object at 0x544e6d030>
+Error processing item 837: cannot identify image file <_io.BytesIO object at 0x544e6f2e0>
+Error processing item 446: cannot identify image file <_io.BytesIO object at 0x544e6d030>
+Error processing item 1312: cannot identify image file <_io.BytesIO object at 0x544e6f2e0>
+Error processing item 759: cannot identify image file <_io.BytesIO object at 0x544e6d030>
+Error processing item 274: cannot identify image file <_io.BytesIO object at 0x544e6f2e0>
+Error processing item 1280: cannot identify image file <_io.BytesIO object at 0x544e6d030>
+Error processing item 976: cannot identify image file <_io.BytesIO object at 0x544e6f2e0>
+Error processing item 898: cannot identify image file <_io.BytesIO object at 0x544e6d030>
+Error processing item 1418: cannot identify image file <_io.BytesIO object at 0x544e6f2e0>
+Error processing item 1218: cannot identify image file <_io.BytesIO object at 0x544e6d030>
+Error processing item 328: cannot identify image file <_io.BytesIO object at 0x544e6f2e0>
+Error processing item 469: cannot identify image file <_io.BytesIO object at 0x544e6d030>
+Error processing item 628: cannot identify image file <_io.BytesIO object at 0x544e6f2e0>
+Error processing item 794: cannot identify image file <_io.BytesIO object at 0x544e6d030>
+Error processing item 1020: cannot identify image file <_io.BytesIO object at 0x544e6f2e0>
+Error processing item 1010: cannot identify image file <_io.BytesIO object at 0x544e6d030>
+Error processing item 457: cannot identify image file <_io.BytesIO object at 0x544e6f2e0>
+Error processing item 119: cannot identify image file <_io.BytesIO object at 0x544e6d030>
+Error processing item 706: cannot identify image file <_io.BytesIO object at 0x544e6f2e0>
+Error processing item 367: cannot identify image file <_io.BytesIO object at 0x544e6d030>
+Error processing item 406: cannot identify image file <_io.BytesIO object at 0x544e76fc0>
+Error processing item 501: cannot identify image file <_io.BytesIO object at 0x544e6f2e0>
+Error processing item 1519: cannot identify image file <_io.BytesIO object at 0x544e6cdb0>
+Error processing item 1524: cannot identify image file <_io.BytesIO object at 0x544e771f0>
+Error processing item 1478: cannot identify image file <_io.BytesIO object at 0x544e6f2e0>
+Error processing item 1239: cannot identify image file <_io.BytesIO object at 0x544e74450>
+Error processing item 91: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1370: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1332: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 626: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 871: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 736: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1431: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 53: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1066: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 763: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1426: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 545: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 275: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 799: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1124: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 95: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 180: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 605: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1475: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1523: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 915: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1586: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 6: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 284: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 994: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1032: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1259: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 812: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 1142: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 534: cannot identify image file <_io.BytesIO object at 0x544e77d80>
+Error processing item 222: cannot identify image file <_io.BytesIO object at 0x544e47f60>
+Error processing item 948: cannot identify image file <_io.BytesIO object at 0x544e6fc40>
+Error processing item 616: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 317: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 973: cannot identify image file <_io.BytesIO object at 0x544e6f790>
+Error processing item 1434: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 432: cannot identify image file <_io.BytesIO object at 0x544e6ebb0>
+Error processing item 850: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 675: cannot identify image file <_io.BytesIO object at 0x544e6ebb0>
+Error processing item 902: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 468: cannot identify image file <_io.BytesIO object at 0x544e6ebb0>
+Error processing item 705: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 932: cannot identify image file <_io.BytesIO object at 0x544e6ebb0>
+Error processing item 374: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 1417: cannot identify image file <_io.BytesIO object at 0x544e6ebb0>
+Error processing item 1178: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 333: cannot identify image file <_io.BytesIO object at 0x544e6ebb0>
+Error processing item 1192: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 8: cannot identify image file <_io.BytesIO object at 0x544e6ebb0>
+Error processing item 1164: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 59: cannot identify image file <_io.BytesIO object at 0x544e6ebb0>
+Error processing item 1410: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 403: cannot identify image file <_io.BytesIO object at 0x544e6ebb0>
+Error processing item 749: cannot identify image file <_io.BytesIO object at 0x544e6c630>
+Error processing item 431: cannot identify image file <_io.BytesIO object at 0x544e6ebb0>
+Error processing item 288: cannot identify image file <_io.BytesIO object at 0x544e6c630>Epoch 1/10
+Training:  50%|█████     | 25/50 [00:08<00:07,  3.15it/s, loss=0.0417, acc=100]Epoch 1/10
+Training:  52%|█████▏    | 26/50 [00:08<00:07,  3.10it/s, loss=0.0417, acc=100]
