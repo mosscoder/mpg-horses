@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/Users/esamsoe/Projects/Dev/MPG_Ranch/mpg-horses/src/horse_detection.py", line 1209, in <module>
+    main(args)
+    ~~~~^^^^^^
+  File "/Users/esamsoe/Projects/Dev/MPG_Ranch/mpg-horses/src/horse_detection.py", line 1063, in main
+    model = create_cnn_model(
+            ^^^^^^^^^^^^^^^^
+NameError: name 'create_cnn_model' is not defined
+Random seed set to 42
+Using device: mps
+Loading dataset from cache: data/cached_datasets/mpg-ranch_horse-detection.parquet
+Loaded cached dataset with 12780 samples
+Dataset size: 12780
+Dataset columns: ['idx', 'Presence', 'Zone', 'Period', 'Recency', 'datetime_groundtruth', 'datetime_aerialsurvey', 'Latitude', 'Longitude', 'Easting', 'Northing', 'Ellipsoidal_height', 'orthomosaic', 'tile_path', 'observation_offset', 'encoded_tile', '__index_level_0__', 'image_base64']
+Using full dataset
+Using 0 workers for data loading
+Dataset columns: ['idx', 'Presence', 'Zone', 'Period', 'Recency', 'datetime_groundtruth', 'datetime_aerialsurvey', 'Latitude', 'Longitude', 'Easting', 'Northing', 'Ellipsoidal_height', 'orthomosaic', 'tile_path', 'observation_offset', 'encoded_tile', '__index_level_0__', 'image_base64']
+Dataset size: 12780
+Label distribution: {1: 7100, 0: 5680}
+Dataset split: 10224 train, 2556 test
+Error in main function: name 'create_cnn_model' is not defined

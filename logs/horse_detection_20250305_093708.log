@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/esamsoe/Projects/Dev/MPG_Ranch/mpg-horses/src/horse_detection.py", line 1407, in <module>
+    os.makedirs(args.results_dir, exist_ok=True)
+                ^^^^^^^^^^^^^^^^
+AttributeError: 'Namespace' object has no attribute 'results_dir'
+Error in main function: 'Namespace' object has no attribute 'results_dir'
