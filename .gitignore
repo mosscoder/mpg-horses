@@ -1,5 +1,6 @@
-**/*.tif
-**/.DS_Store
+models/
+notes/
+logs/
 
 data/raster/tiles/
 data/raster/geotiffs/
@@ -7,8 +8,10 @@ data/processed/
 data/hf
 data/cached_datasets/
 
-models/
-notes/
+notebooks/.ipynb_checkpoints/
+
+**/*.tif
+**/.DS_Store
 
 .cursorrules
 .newrules
