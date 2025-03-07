@@ -10,6 +10,8 @@ data/cached_datasets/
 models/
 notes/
 
+notebooks/.ipynb_checkpoints/
+
 .cursorrules
 .newrules
 cursorrules.txt
