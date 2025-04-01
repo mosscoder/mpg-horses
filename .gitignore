@@ -1,6 +1,7 @@
 models/
 notes/
 logs/
+src/
 
 data/raster/tiles/
 data/raster/geotiffs/
@@ -16,3 +17,4 @@ notebooks/.ipynb_checkpoints/
 .cursorrules
 .newrules
 cursorrules.txt
+
