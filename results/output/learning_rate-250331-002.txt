@@ -1,0 +1,63 @@
+Using device: cuda
+
+Testing learning rate: 0.01
+LR: 0.010000, Epoch: 1/10, Train Loss: 0.7333, Val Loss: 0.6819, Val Acc: 56.42%, Val F1: 0.7173
+LR: 0.010000, Epoch: 2/10, Train Loss: 0.6866, Val Loss: 0.7630, Val Acc: 52.00%, Val F1: 0.6564
+LR: 0.010000, Epoch: 3/10, Train Loss: 0.6778, Val Loss: 1.3457, Val Acc: 55.99%, Val F1: 0.7178
+LR: 0.010000, Epoch: 4/10, Train Loss: 0.6474, Val Loss: 0.6284, Val Acc: 67.29%, Val F1: 0.7431
+LR: 0.010000, Epoch: 5/10, Train Loss: 0.6011, Val Loss: 0.5578, Val Acc: 69.91%, Val F1: 0.6925
+LR: 0.010000, Epoch: 6/10, Train Loss: 0.5863, Val Loss: 0.5889, Val Acc: 67.84%, Val F1: 0.7468
+LR: 0.010000, Epoch: 7/10, Train Loss: 0.5689, Val Loss: 0.5681, Val Acc: 69.05%, Val F1: 0.7494
+LR: 0.010000, Epoch: 8/10, Train Loss: 0.5641, Val Loss: 0.5017, Val Acc: 74.65%, Val F1: 0.7733
+LR: 0.010000, Epoch: 9/10, Train Loss: 0.5532, Val Loss: 0.5663, Val Acc: 68.78%, Val F1: 0.7592
+LR: 0.010000, Epoch: 10/10, Train Loss: 0.5506, Val Loss: 0.5234, Val Acc: 74.65%, Val F1: 0.7571
+
+Testing learning rate: 0.001
+LR: 0.001000, Epoch: 1/10, Train Loss: 0.6314, Val Loss: 0.5016, Val Acc: 74.14%, Val F1: 0.7395
+LR: 0.001000, Epoch: 2/10, Train Loss: 0.5432, Val Loss: 0.5645, Val Acc: 73.12%, Val F1: 0.7439
+LR: 0.001000, Epoch: 3/10, Train Loss: 0.5125, Val Loss: 0.4731, Val Acc: 76.21%, Val F1: 0.7996
+LR: 0.001000, Epoch: 4/10, Train Loss: 0.4897, Val Loss: 0.4553, Val Acc: 78.40%, Val F1: 0.8075
+LR: 0.001000, Epoch: 5/10, Train Loss: 0.4648, Val Loss: 0.5396, Val Acc: 74.57%, Val F1: 0.7726
+LR: 0.001000, Epoch: 6/10, Train Loss: 0.4523, Val Loss: 0.4597, Val Acc: 76.17%, Val F1: 0.8069
+LR: 0.001000, Epoch: 7/10, Train Loss: 0.4177, Val Loss: 0.4993, Val Acc: 76.92%, Val F1: 0.7966
+LR: 0.001000, Epoch: 8/10, Train Loss: 0.4007, Val Loss: 0.4598, Val Acc: 78.33%, Val F1: 0.8006
+LR: 0.001000, Epoch: 9/10, Train Loss: 0.3620, Val Loss: 0.5091, Val Acc: 76.88%, Val F1: 0.8104
+LR: 0.001000, Epoch: 10/10, Train Loss: 0.3157, Val Loss: 0.5671, Val Acc: 75.51%, Val F1: 0.7841
+
+Testing learning rate: 0.0001
+LR: 0.000100, Epoch: 1/10, Train Loss: 0.5500, Val Loss: 0.4301, Val Acc: 78.68%, Val F1: 0.8164
+LR: 0.000100, Epoch: 2/10, Train Loss: 0.3887, Val Loss: 0.4551, Val Acc: 79.69%, Val F1: 0.8015
+LR: 0.000100, Epoch: 3/10, Train Loss: 0.2359, Val Loss: 0.5879, Val Acc: 78.13%, Val F1: 0.8155
+LR: 0.000100, Epoch: 4/10, Train Loss: 0.1442, Val Loss: 0.6353, Val Acc: 79.19%, Val F1: 0.8113
+LR: 0.000100, Epoch: 5/10, Train Loss: 0.1118, Val Loss: 0.6025, Val Acc: 78.17%, Val F1: 0.8079
+LR: 0.000100, Epoch: 6/10, Train Loss: 0.0769, Val Loss: 0.7024, Val Acc: 80.09%, Val F1: 0.8170
+LR: 0.000100, Epoch: 7/10, Train Loss: 0.0582, Val Loss: 0.8379, Val Acc: 78.68%, Val F1: 0.8163
+LR: 0.000100, Epoch: 8/10, Train Loss: 0.0626, Val Loss: 0.7002, Val Acc: 78.99%, Val F1: 0.7974
+LR: 0.000100, Epoch: 9/10, Train Loss: 0.0527, Val Loss: 0.6991, Val Acc: 79.42%, Val F1: 0.8175
+LR: 0.000100, Epoch: 10/10, Train Loss: 0.0459, Val Loss: 0.6570, Val Acc: 79.54%, Val F1: 0.8147
+
+Testing learning rate: 1e-05
+LR: 0.000010, Epoch: 1/10, Train Loss: 0.6209, Val Loss: 0.5435, Val Acc: 71.71%, Val F1: 0.7671
+LR: 0.000010, Epoch: 2/10, Train Loss: 0.4609, Val Loss: 0.5063, Val Acc: 74.73%, Val F1: 0.7686
+LR: 0.000010, Epoch: 3/10, Train Loss: 0.2954, Val Loss: 0.5491, Val Acc: 74.49%, Val F1: 0.7866
+LR: 0.000010, Epoch: 4/10, Train Loss: 0.1418, Val Loss: 0.6361, Val Acc: 74.96%, Val F1: 0.7775
+LR: 0.000010, Epoch: 5/10, Train Loss: 0.0714, Val Loss: 0.7196, Val Acc: 74.92%, Val F1: 0.7850
+LR: 0.000010, Epoch: 6/10, Train Loss: 0.0521, Val Loss: 0.8255, Val Acc: 73.67%, Val F1: 0.7806
+LR: 0.000010, Epoch: 7/10, Train Loss: 0.0398, Val Loss: 0.8326, Val Acc: 74.22%, Val F1: 0.7849
+LR: 0.000010, Epoch: 8/10, Train Loss: 0.0353, Val Loss: 0.8764, Val Acc: 73.94%, Val F1: 0.7750
+LR: 0.000010, Epoch: 9/10, Train Loss: 0.0246, Val Loss: 0.9567, Val Acc: 73.87%, Val F1: 0.7852
+LR: 0.000010, Epoch: 10/10, Train Loss: 0.0266, Val Loss: 0.9203, Val Acc: 74.30%, Val F1: 0.7796
+
+
+Summary of Learning Rate Performance:
+------------------------------------------------------------
+Learning Rate   Final Val Acc   Final Val F1   
+------------------------------------------------------------
+0.010000        74.65           0.7571         
+0.001000        75.51           0.7841         
+0.000100        79.54           0.8147         
+0.000010        74.30           0.7796         
+
+Best learning rate based on validation accuracy: 0.0001
+
+Recommendation: Use learning_rate = 0.0001 in the main training configuration
